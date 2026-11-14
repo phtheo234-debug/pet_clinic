@@ -1,0 +1,2 @@
+NguoiDung-agent: *
+Disallow:

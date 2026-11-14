@@ -167,7 +167,7 @@
         <div class="card shadow-sm h-100">
             <div class="card-header bg-danger text-white font-weight-bold">
                 <i class="fas fa-exclamation-triangle mr-1"></i> Hàng đã hết hạn
-                <span class="badge badge-light text-dark ml-2" id="countDaHetHan">0</span>
+                <span class="badge badge-dark ml-2" id="countDaHetHan">0</span>
             </div>
             <div class="table-responsive"><table class="table table-sm table-hover mb-0">
                 <thead class="thead-light"><tr><th>Sản phẩm</th><th>Lô</th><th>Tồn</th><th>Hết hạn</th><th></th></tr></thead>

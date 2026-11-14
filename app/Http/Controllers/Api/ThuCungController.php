@@ -104,6 +104,31 @@ class ThuCungController extends Controller
         DB::table('chu_nuoi')->where('owner_id', $id)->delete();
         return response()->json(['status' => 'success', 'message' => 'Đã xóa chủ nuôi thành công.']);
     }
+    /** Danh sách chủ nuôi dùng cho bảng quản lý và dropdown. */
+    public function owners()
+    {
+        $owners = DB::table('chu_nuoi')
+            ->select(
+                'chu_nuoi.owner_id',
+                'chu_nuoi.ho_ten',
+                'chu_nuoi.phone',
+                'chu_nuoi.diachi',
+                'chu_nuoi.email'
+            )
+            ->selectSub(function ($query) {
+                $query->from('thu_cung')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('thu_cung.owner_id', 'chu_nuoi.owner_id');
+            }, 'pet_count')
+            ->orderByDesc('chu_nuoi.owner_id')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $owners,
+        ], 200);
+    }
+
     // Lấy danh sách chủ nuôi đổ vào Dropdown chọn Chủ nuôi ở Frontend
     public function chu_nuoi()
     {

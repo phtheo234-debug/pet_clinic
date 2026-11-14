@@ -188,5 +188,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/thu-cung.js') }}?v={{ filemtime(public_path('js/thu-cung.js')) }}"></script>
+<script src="{{ asset('js/thu-cung.js') }}?v={{ filemtime(public_path('js/thu-cung.js')) }}&fix-delete-role=20261114"></script>
 @endpush

@@ -159,13 +159,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (remove) {
             if (currentUserRole !== "QUAN_TRI") { alert("Chỉ quản trị viên được xóa chủ nuôi."); return; }
             const id = Number(remove.dataset.deleteOwner);
-            const owner = extractList(await apiRequest("/owners")).find(item => Number(item.owner_id) === id);
-            const petCount = Number(owner?.pet_count || 0);
-            const detail = petCount > 0
-                ? "\n\nToàn bộ " + petCount + " hồ sơ thú cưng cùng dữ liệu khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng liên quan sẽ bị xóa vĩnh viễn."
-                : "\n\nHồ sơ chủ nuôi này hiện không có thú cưng liên kết.";
-            if (!confirm("Bạn chắc chắn muốn XÓA CHỦ \"" + (owner?.ho_ten || ("#" + id)) + "\"?" + detail + "\n\nThao tác này không thể hoàn tác.")) return;
             try {
+                const owner = extractList(await apiRequest("/owners")).find(item => Number(item.owner_id) === id);
+                const petCount = Number(owner?.pet_count || 0);
+                const detail = petCount > 0
+                    ? "\n\nToàn bộ " + petCount + " hồ sơ thú cưng cùng dữ liệu khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng liên quan sẽ bị xóa vĩnh viễn."
+                    : "\n\nHồ sơ chủ nuôi này hiện không có thú cưng liên kết.";
+                if (!confirm("Bạn chắc chắn muốn XÓA CHỦ \"" + (owner?.ho_ten || ("#" + id)) + "\"?" + detail + "\n\nNếu còn thú cưng đang nội trú, hệ thống sẽ từ chối thao tác. Thao tác xóa không thể hoàn tác.")) return;
                 const result = await apiRequest("/owners/" + id, { method: "DELETE" });
                 await Promise.all([loadOwners(), loadPets()]);
                 alert(result?.message || "Đã xóa chủ nuôi và dữ liệu liên quan.");

@@ -101,16 +101,11 @@ class QuanLyTaiKhoanController extends Controller
                 ])
             ],
 
-            'mat_khau_tam' => [
-                'required',
-                'string',
-                'min:6'
-            ],
         ]);
 
         $user = NguoiDung::create([
             'username' => $fields['username'],
-            'mat_khau' => Hash::make($fields['mat_khau_tam']),
+            'mat_khau' => Hash::make('123456'),
             'ho_ten' => $fields['ho_ten'],
             'email' => $fields['email'],
             'phone' => $fields['phone'] ?? null,

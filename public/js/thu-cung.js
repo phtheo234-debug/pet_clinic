@@ -114,9 +114,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (deleteButton) {
             const id = Number(deleteButton.dataset.deletePet);
             const pet = petsList.find(item => Number(item.pet_id ?? item.id) === id);
-            if (!confirm("Xóa hồ sơ thú cưng " + (pet?.name || pet?.ten_thucung || ("#" + id)) + "? Chỉ xóa được hồ sơ chưa phát sinh dữ liệu khám/hóa đơn.")) return;
-            try { await apiRequest("/pets/" + id, { method: "DELETE" }); await loadPets(); alert("Đã xóa hồ sơ thú cưng."); }
-            catch (error) { alert("Không thể xóa hồ sơ: " + error.message); }
+            if (currentUserRole !== "QUAN_TRI") { alert("Chỉ quản trị viên được xóa thú cưng."); return; }
+            const petName = pet?.name || pet?.ten_thucung || ("#" + id);
+            const ownerName = pet?.owner?.name || pet?.owner_name || "chủ nuôi";
+            const ownerPetCount = petsList.filter(item => Number(item.owner_id ?? item.owner?.id) === Number(pet?.owner_id ?? pet?.owner?.id)).length;
+            const finalWarning = ownerPetCount <= 1
+                ? "\\n\\nLưu ý: Đây là thú cưng cuối cùng của " + ownerName + ". Hồ sơ chủ nuôi cũng sẽ tự động bị xóa."
+                : "\\n\\nCác thú cưng khác của " + ownerName + " vẫn được giữ nguyên.";
+            if (!confirm("Bạn chắc chắn muốn XÓA THÚ \"" + petName + "\"?\\n\\nToàn bộ dữ liệu liên quan như lịch sử khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng của thú cưng này sẽ bị xóa vĩnh viễn." + finalWarning)) return;
+            try {
+                const result = await apiRequest("/pets/" + id, { method: "DELETE" });
+                await Promise.all([loadPets(), loadOwners()]);
+                alert(result?.message || "Đã xóa thú cưng.");
+            } catch (error) { alert("Không thể xóa thú cưng: " + error.message); }
         }
     });
 
@@ -146,10 +156,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("editOwnerId").value = owner.owner_id; document.getElementById("editOwnerName").value = owner.ho_ten || "";
             document.getElementById("editOwnerPhone").value = owner.phone || ""; document.getElementById("editOwnerEmail").value = owner.email || "";
             document.getElementById("editOwnerAddress").value = owner.diachi || ""; $("#editOwnerModal").modal("show");
-        } else if (remove) { const id = Number(remove.dataset.deleteOwner);
-            if (!confirm("Xóa chủ nuôi này? Hệ thống chỉ cho phép xóa khi không còn thú cưng liên kết.")) return;
-            try { await apiRequest("/owners/" + id, { method: "DELETE" }); await loadOwners(); alert("Đã xóa chủ nuôi."); }
-            catch (error) { alert("Không thể xóa chủ nuôi: " + error.message); }
+        } else if (remove) {
+            if (currentUserRole !== "QUAN_TRI") { alert("Chỉ quản trị viên được xóa chủ nuôi."); return; }
+            const id = Number(remove.dataset.deleteOwner);
+            const owner = extractList(await apiRequest("/owners")).find(item => Number(item.owner_id) === id);
+            const petCount = Number(owner?.pet_count || 0);
+            const detail = petCount > 0
+                ? "\\n\\nToàn bộ " + petCount + " hồ sơ thú cưng cùng dữ liệu khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng liên quan sẽ bị xóa vĩnh viễn."
+                : "\\n\\nHồ sơ chủ nuôi này hiện không có thú cưng liên kết.";
+            if (!confirm("Bạn chắc chắn muốn XÓA CHỦ \"" + (owner?.ho_ten || ("#" + id)) + "\"?" + detail + "\\n\\nThao tác này không thể hoàn tác.")) return;
+            try {
+                const result = await apiRequest("/owners/" + id, { method: "DELETE" });
+                await Promise.all([loadOwners(), loadPets()]);
+                alert(result?.message || "Đã xóa chủ nuôi và dữ liệu liên quan.");
+            } catch (error) { alert("Không thể xóa chủ nuôi: " + error.message); }
         }
     });
     // Mở hộp thoại ghi chú khi yêu cầu đưa thú cưng vào danh sách chờ.
@@ -297,7 +317,7 @@ async function loadOwners() {
     try { const owners = extractList(await apiRequest("/owners"));
         const canManageOwners = ["QUAN_TRI", "NHAN_VIEN"].includes(currentUserRole);
         body.innerHTML = owners.length ? owners.map(owner => { const encoded = encodeURIComponent(JSON.stringify(owner));
-            const editButton = canManageOwners ? `<button type="button" class="btn btn-sm btn-outline-primary" data-edit-owner data-owner="${encoded}">Sửa</button>` : '<span class="text-muted">Chỉ xem</span>'; const deleteButton = currentUserRole === "QUAN_TRI" ? ` <button type="button" class="btn btn-sm btn-outline-danger" data-delete-owner="${Number(owner.owner_id)}" ${Number(owner.pet_count || 0) > 0 ? "disabled" : ""}>Xóa</button>` : ""; const actions = editButton + deleteButton;
+            const editButton = canManageOwners ? `<button type="button" class="btn btn-sm btn-outline-primary" data-edit-owner data-owner="${encoded}">Sửa</button>` : '<span class="text-muted">Chỉ xem</span>'; const deleteButton = currentUserRole === "QUAN_TRI" ? ` <button type="button" class="btn btn-sm btn-outline-danger" data-delete-owner="${Number(owner.owner_id)}">Xóa chủ</button>` : ""; const actions = editButton + deleteButton;
             return `<tr><td>${escapePetHtml(owner.ho_ten)}</td><td>${escapePetHtml(owner.phone)}</td><td>${escapePetHtml(owner.email || "-")}</td><td>${escapePetHtml(owner.diachi || "-")}</td><td class="text-nowrap">${actions} <small class="text-muted ml-1">${Number(owner.pet_count || 0)} thú cưng</small></td></tr>`;
         }).join("") : '<tr><td colspan="5" class="text-center text-muted">Chưa có chủ nuôi.</td></tr>';
     } catch (error) { body.innerHTML = `<tr><td colspan="5" class="text-danger text-center">${escapePetHtml(error.message)}</td></tr>`; }
@@ -410,7 +430,7 @@ function renderPetsTable(items) {
                     ${["QUAN_TRI", "NHAN_VIEN"].includes(currentUserRole) && !p.trangthai_hangdoi && (!p.trangthai_kham || p.trangthai_kham === "CHUA_KHAM") ? '<button type="button" class="btn btn-sm btn-outline-danger mr-1" data-add-medical-queue data-pet-id="' + Number(petId) + '" data-queue-note="' + escapePetHtml(p.ghi_chu_cho_kham || "") + '"><i class="fas fa-user-clock mr-1"></i>Đưa vào chờ khám</button>' : p.trangthai_hangdoi === "CHO_KHAM" ? '<span class="badge badge-secondary mr-1">Đang chờ khám</span>' : p.trangthai_hangdoi === "DANG_KHAM" ? '<span class="badge badge-warning mr-1">Đang khám</span>' : ""}
                     <button type="button" class="btn btn-sm btn-outline-primary mr-1" onclick="openPetDetail(${Number(petId)})"><i class="fas fa-eye"></i> Chi tiết</button>
                     <button type="button" class="btn btn-sm btn-outline-success" onclick="printPetProfile(${Number(petId)})"><i class="fas fa-print"></i> In hồ sơ</button>
-                    ${["QUAN_TRI", "NHAN_VIEN"].includes(currentUserRole) ? '<button type="button" class="btn btn-sm btn-outline-warning ml-1" data-edit-pet="' + Number(petId) + '"><i class="fas fa-edit"></i> Sửa</button> <button type="button" class="btn btn-sm btn-outline-danger ml-1" data-delete-pet="' + Number(petId) + '"><i class="fas fa-trash"></i> Xóa</button>' : ""}
+                    ${["QUAN_TRI", "NHAN_VIEN"].includes(currentUserRole) ? '<button type="button" class="btn btn-sm btn-outline-warning ml-1" data-edit-pet="' + Number(petId) + '"><i class="fas fa-edit"></i> Sửa</button>' : ""}${currentUserRole === "QUAN_TRI" ? ' <button type="button" class="btn btn-sm btn-outline-danger ml-1" data-delete-pet="' + Number(petId) + '"><i class="fas fa-trash"></i> Xóa thú</button>' : ""}
                 </td>
             </tr>
         `;

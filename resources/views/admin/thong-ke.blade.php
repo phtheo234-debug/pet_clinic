@@ -165,7 +165,7 @@
     </div>
     <div class="col-lg-6 mb-4">
         <div class="card shadow-sm h-100">
-            <div class="card-header bg-danger text-white font-weight-bold">
+            <div class="card-header bg-warning text-dark font-weight-bold">
                 <i class="fas fa-exclamation-triangle mr-1"></i> Hàng đã hết hạn
                 <span class="badge badge-dark ml-2" id="countDaHetHan">0</span>
             </div>

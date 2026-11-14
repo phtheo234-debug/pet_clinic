@@ -1,0 +1,66 @@
+name: Khoi tao ma nguon Pet Clinic
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: khoi-tao-pet-clinic-main
+  cancel-in-progress: false
+
+jobs:
+  tao-ma-nguon:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lay kho pet_clinic
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Cai Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Lay ma nguon PET-CLINIC
+        run: git clone --depth 1 --branch main https://github.com/phtheo234-debug/PET-CLINIC.git /tmp/PET-CLINIC
+
+      - name: Giai nen bo chuyen doi
+        run: |
+          python - <<'PY'
+          import base64, zlib
+          from pathlib import Path
+          encoded = Path('scripts/chuyen_doi_du_an.py.zlib.b64').read_text().strip()
+          Path('/tmp/chuyen_doi_du_an.py').write_bytes(zlib.decompress(base64.b64decode(encoded)))
+          PY
+          python /tmp/chuyen_doi_du_an.py /tmp/PET-CLINIC .
+
+      - name: Cai PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Kiem tra cu phap PHP
+        run: find app database routes -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Cai Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Kiem tra cu phap JavaScript
+        run: find public/js -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Day ma nguon vao nhanh main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Tao moi ma nguon Pet Clinic va migrations"
+            git push origin main
+          fi

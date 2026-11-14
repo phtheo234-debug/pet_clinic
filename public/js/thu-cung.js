@@ -119,9 +119,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const ownerName = pet?.owner?.name || pet?.owner_name || "chủ nuôi";
             const ownerPetCount = petsList.filter(item => Number(item.owner_id ?? item.owner?.id) === Number(pet?.owner_id ?? pet?.owner?.id)).length;
             const finalWarning = ownerPetCount <= 1
-                ? "\\n\\nLưu ý: Đây là thú cưng cuối cùng của " + ownerName + ". Hồ sơ chủ nuôi cũng sẽ tự động bị xóa."
-                : "\\n\\nCác thú cưng khác của " + ownerName + " vẫn được giữ nguyên.";
-            if (!confirm("Bạn chắc chắn muốn XÓA THÚ \"" + petName + "\"?\\n\\nToàn bộ dữ liệu liên quan như lịch sử khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng của thú cưng này sẽ bị xóa vĩnh viễn." + finalWarning)) return;
+                ? "\n\nLưu ý: Đây là thú cưng cuối cùng của " + ownerName + ". Hồ sơ chủ nuôi cũng sẽ tự động bị xóa."
+                : "\n\nCác thú cưng khác của " + ownerName + " vẫn được giữ nguyên.";
+            if (!confirm("Bạn chắc chắn muốn XÓA THÚ \"" + petName + "\"?\n\nToàn bộ dữ liệu liên quan như lịch sử khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng của thú cưng này sẽ bị xóa vĩnh viễn." + finalWarning)) return;
             try {
                 const result = await apiRequest("/pets/" + id, { method: "DELETE" });
                 await Promise.all([loadPets(), loadOwners()]);
@@ -162,9 +162,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const owner = extractList(await apiRequest("/owners")).find(item => Number(item.owner_id) === id);
             const petCount = Number(owner?.pet_count || 0);
             const detail = petCount > 0
-                ? "\\n\\nToàn bộ " + petCount + " hồ sơ thú cưng cùng dữ liệu khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng liên quan sẽ bị xóa vĩnh viễn."
-                : "\\n\\nHồ sơ chủ nuôi này hiện không có thú cưng liên kết.";
-            if (!confirm("Bạn chắc chắn muốn XÓA CHỦ \"" + (owner?.ho_ten || ("#" + id)) + "\"?" + detail + "\\n\\nThao tác này không thể hoàn tác.")) return;
+                ? "\n\nToàn bộ " + petCount + " hồ sơ thú cưng cùng dữ liệu khám, đơn thuốc, hóa đơn, lưu trú, tiêm chủng và cân nặng liên quan sẽ bị xóa vĩnh viễn."
+                : "\n\nHồ sơ chủ nuôi này hiện không có thú cưng liên kết.";
+            if (!confirm("Bạn chắc chắn muốn XÓA CHỦ \"" + (owner?.ho_ten || ("#" + id)) + "\"?" + detail + "\n\nThao tác này không thể hoàn tác.")) return;
             try {
                 const result = await apiRequest("/owners/" + id, { method: "DELETE" });
                 await Promise.all([loadOwners(), loadPets()]);

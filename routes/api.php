@@ -76,7 +76,7 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
     Route::post('/pets', [ThuCungController::class, 'store'])->middleware('role:QUAN_TRI,NHAN_VIEN');
     Route::put('/pets/{pet}', [ThuCungController::class, 'update'])->middleware('role:QUAN_TRI,BAC_SI,NHAN_VIEN');
     Route::patch('/pets/{pet}', [ThuCungController::class, 'update'])->middleware('role:QUAN_TRI,BAC_SI,NHAN_VIEN');
-    Route::delete('/pets/{pet}', [ThuCungController::class, 'destroy'])->middleware('role:QUAN_TRI,NHAN_VIEN');
+    Route::delete('/pets/{pet}', [ThuCungController::class, 'destroy'])->middleware('role:QUAN_TRI');
     Route::get('/owners', [ThuCungController::class, 'owners']);
     Route::put('/owners/{id}', [ThuCungController::class, 'updateOwner'])->middleware('role:QUAN_TRI,NHAN_VIEN');
     Route::delete('/owners/{id}', [ThuCungController::class, 'destroyOwner'])->middleware('role:QUAN_TRI');

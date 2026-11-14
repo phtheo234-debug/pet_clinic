@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\CageOccupancyService;
+use App\Services\DichVuSucChuaLong;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
 
 class LuuTruController extends Controller
 {
-    public function __construct(private CageOccupancyService $cageOccupancy)
+    public function __construct(private DichVuSucChuaLong $cageOccupancy)
     {
     }
 

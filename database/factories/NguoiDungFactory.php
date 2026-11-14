@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * @extends Factory<User>
+ * @extends Factory<NguoiDung>
  */
 class NguoiDungFactory extends Factory
 {

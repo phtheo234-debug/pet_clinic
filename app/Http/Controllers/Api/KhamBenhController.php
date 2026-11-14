@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\CageOccupancyService;
+use App\Services\DichVuSucChuaLong;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +13,7 @@ class KhamBenhController extends Controller
 {
     public function __construct(
         protected KhoController $inventory,
-        private CageOccupancyService $cageOccupancy
+        private DichVuSucChuaLong $cageOccupancy
     ) {
     }
 

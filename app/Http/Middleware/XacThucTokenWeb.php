@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
+use App\Models\NguoiDung;
 use Closure;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -29,7 +29,7 @@ class XacThucTokenWeb
 
         $user = $accessToken->tokenable;
 
-        if (!$user instanceof User || $user->trangthai !== 'HOAT_DONG') {
+        if (!$user instanceof NguoiDung || $user->trangthai !== 'HOAT_DONG') {
             return $this->reject($request);
         }
 

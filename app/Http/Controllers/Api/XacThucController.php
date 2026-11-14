@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
+use App\Models\NguoiDung;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
@@ -18,7 +18,7 @@ class XacThucController extends Controller
             'mat_khau' => 'required|string',
         ]);
 
-        $user = User::where('username', $fields['username'])->first();
+        $user = NguoiDung::where('username', $fields['username'])->first();
 
         if (!$user || !Hash::check($fields['mat_khau'], $user->mat_khau)) {
             return response()->json([
@@ -53,15 +53,15 @@ class XacThucController extends Controller
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => 'required|email']);
-        $user = User::where('email', $request->email)->first();
+        $user = NguoiDung::where('email', $request->email)->first();
 
         // Luôn trả cùng thông báo để không tiết lộ email có đăng ký hay không.
         if ($user && $user->trangthai === 'HOAT_DONG') {
             $code = (string) random_int(100000, 999999);
             Cache::put('password_reset:' . strtolower($user->email), Hash::make($code), now()->addMinute());
 
-            Mail::raw("Mã xác nhận đặt lại mật khẩu Pet Clinic của bạn là: {$code}. Mã có hiệu lực trong 1 phút.", function ($message) use ($user) {
-                $message->to($user->email)->subject('Mã xác nhận đặt lại mật khẩu - Pet Clinic');
+            Mail::raw("Mã xác nhận đặt lại mật khẩu ThuCung Clinic của bạn là: {$code}. Mã có hiệu lực trong 1 phút.", function ($message) use ($user) {
+                $message->to($user->email)->subject('Mã xác nhận đặt lại mật khẩu - ThuCung Clinic');
             });
         }
 
@@ -81,7 +81,7 @@ class XacThucController extends Controller
 
         $key = 'password_reset:' . strtolower($fields['email']);
         $hashedCode = Cache::get($key);
-        $user = User::where('email', $fields['email'])->where('trangthai', 'HOAT_DONG')->first();
+        $user = NguoiDung::where('email', $fields['email'])->where('trangthai', 'HOAT_DONG')->first();
 
         if (!$user || !$hashedCode || !Hash::check($fields['code'], $hashedCode)) {
             return response()->json([

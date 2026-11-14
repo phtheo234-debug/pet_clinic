@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\NguoiDung;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -15,7 +15,7 @@ class QuanLyNguoiDungController extends Controller
      */
     public function index()
     {
-        $users = User::select(
+        $users = NguoiDung::select(
             'user_id',
             'username',
             'ho_ten',
@@ -42,7 +42,7 @@ class QuanLyNguoiDungController extends Controller
      */
     public function show($id)
     {
-        $user = User::select(
+        $user = NguoiDung::select(
             'user_id',
             'username',
             'ho_ten',
@@ -108,7 +108,7 @@ class QuanLyNguoiDungController extends Controller
             ],
         ]);
 
-        $user = User::create([
+        $user = NguoiDung::create([
             'username' => $fields['username'],
             'mat_khau' => Hash::make($fields['mat_khau_tam']),
             'ho_ten' => $fields['ho_ten'],
@@ -139,7 +139,7 @@ class QuanLyNguoiDungController extends Controller
     /** Cập nhật thông tin tài khoản nhân viên/bác sĩ. */
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = NguoiDung::findOrFail($id);
         if ($user->vaitro === 'QUAN_TRI' || (int) $user->user_id === (int) $request->user()->user_id) {
             return response()->json(['status' => 'error', 'message' => 'Không thể chỉnh sửa tài khoản quản trị hệ thống hoặc tài khoản đang đăng nhập.'], 403);
         }
@@ -161,7 +161,7 @@ class QuanLyNguoiDungController extends Controller
     /** Xóa tài khoản nhân viên/bác sĩ. */
     public function destroy(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = NguoiDung::findOrFail($id);
         if ($user->vaitro === 'QUAN_TRI' || (int) $user->user_id === (int) $request->user()->user_id) {
             return response()->json(['status' => 'error', 'message' => 'Không thể xóa tài khoản quản trị hệ thống hoặc tài khoản đang đăng nhập.'], 403);
         }
@@ -185,7 +185,7 @@ class QuanLyNguoiDungController extends Controller
             ]
         ]);
 
-        $user = User::findOrFail($id);
+        $user = NguoiDung::findOrFail($id);
 
         $user->mat_khau = Hash::make($fields['mat_khau_tam']);
         $user->phai_doimatkhau = true;
@@ -214,7 +214,7 @@ class QuanLyNguoiDungController extends Controller
             ]
         ]);
 
-        $user = User::findOrFail($id);
+        $user = NguoiDung::findOrFail($id);
 
         // Hệ thống chỉ sử dụng một tài khoản quản trị; không cho khóa tài khoản quản trị.
         if ($user->vaitro === 'QUAN_TRI' && $fields['trangthai'] !== 'HOAT_DONG') {

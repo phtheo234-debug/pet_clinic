@@ -6,39 +6,38 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::view('/login', 'auth.login')->name('login');
-Route::view('/forgot-password', 'auth.forgot-password')->name('forgot-password');
+Route::view('/login', 'auth.dang-nhap')->name('login');
+Route::view('/forgot-password', 'auth.quen-mat-khau')->name('forgot-password');
 
 Route::middleware('web.token')->group(function () {
-    Route::view('/change-password', 'auth.change-password')->name('change-password');
-    Route::view('/profile', 'ho_so')->name('profile');
+    Route::view('/change-password', 'auth.doi-mat-khau')->name('change-password');
+    Route::view('/profile', 'ho-so-ca-nhan')->name('ho-so-ca-nhan');
 
     // Các vai trò đều được xem tổng quan, hồ sơ thú cưng và danh sách lồng.
-    Route::view('/dashboard', 'tong_quan')->name('dashboard');
-    Route::view('/pets', 'thu_cung')->name('pets');
-    Route::view('/cages', 'long')->name('cages');
+    Route::view('/dashboard', 'tong-quan')->name('tong-quan');
+    Route::view('/pets', 'thu-cung')->name('thu-cung');
+    Route::view('/cages', 'long-nuoi')->name('long-nuoi');
 
     // Bác sĩ và quản trị viên được truy cập nghiệp vụ khám, chẩn đoán, kê đơn.
-    Route::view('/medical', 'kham_benh')
+    Route::view('/medical', 'kham-benh')
         ->middleware('web.role:QUAN_TRI,BAC_SI')
-        ->name('medical');
+        ->name('kham-benh');
 
     // Cả ba vai trò được xem danh mục kho; thao tác nhập/xuất và quản lý
     // danh mục được kiểm soát riêng tại API.
-    Route::view('/inventory', 'kho')->name('inventory');
+    Route::view('/inventory', 'kho')->name('kho');
 
     // Thanh toán, xuất viện và ghi nhận Spa dành cho nhân viên/quản trị.
-    Route::view('/invoices', 'hoa_don')
+    Route::view('/invoices', 'hoa-don')
         ->middleware('web.role:QUAN_TRI,NHAN_VIEN')
-        ->name('invoices');
+        ->name('hoa-don');
 
-    Route::view('/admin/users', 'admin.nguoi_dung')
+    Route::view('/admin/users', 'admin.tai-khoan')
         ->middleware('web.role:QUAN_TRI')
-        ->name('admin.nguoi_dung');
+        ->name('admin.tai-khoan');
 
-    Route::view('/admin/statistics', 'admin.thong_ke')
+    Route::view('/admin/statistics', 'admin.thong-ke')
         ->middleware('web.role:QUAN_TRI')
-        ->name('admin.thong_ke');
+        ->name('admin.thong-ke');
 });
 
-Route::view('/test-api', 'test-api');

@@ -109,7 +109,7 @@ class XacThucController extends Controller
         $user = $request->user();
         $fields = $request->validate([
             'ho_ten' => 'required|string|max:100',
-            'email' => 'required|email|max:100|unique:users,email,' . $user->user_id . ',user_id',
+            'email' => 'required|email|max:100|unique:nguoi_dung,email,' . $user->user_id . ',user_id',
             'phone' => 'nullable|string|max:20',
         ]);
 

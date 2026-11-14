@@ -1,5 +1,5 @@
-let paymentThuCungs = [], paymentCatalog = [], medicalChargeLines = [], extraChargeLines = [];
-let selectedPaymentThuCungId = null, paymentPreview = null;
+let paymentPets = [], paymentCatalog = [], medicalChargeLines = [], extraChargeLines = [];
+let selectedPaymentPetId = null, paymentPreview = null;
 
 function invoiceUnwrap(r) { return r && r.data && r.data.data ? r.data.data : (r && r.data ? r.data : (r || {})); }
 function invoiceList(r) { const d=invoiceUnwrap(r); return Array.isArray(d)?d:[]; }
@@ -18,15 +18,15 @@ document.addEventListener("DOMContentLoaded", async function() {
         console.error("Không khởi tạo được trang thanh toán:", e);
     }
 
-    loadPaymentThuCungs().catch(function(e) {
+    loadPaymentPets().catch(function(e) {
         console.error("Không tải được danh sách thú cưng:", e);
-        document.getElementById("paymentThuCungInfo").textContent = "Không tải được danh sách thú cưng: " + e.message;
+        document.getElementById("paymentPetInfo").textContent = "Không tải được danh sách thú cưng: " + e.message;
     });
 
-    document.getElementById("paymentThuCungSearch").addEventListener("input",renderEligiblePaymentThuCungs);
-    document.getElementById("eligiblePaymentThuCungsBody").addEventListener("click",function(event){
+    document.getElementById("paymentPetSearch").addEventListener("input",renderEligiblePaymentPets);
+    document.getElementById("eligiblePaymentPetsBody").addEventListener("click",function(event){
         const button=event.target.closest("[data-select-payment-pet]");
-        if(button) choosePaymentThuCung(Number(button.dataset.selectPaymentThuCung));
+        if(button) choosePaymentPet(Number(button.dataset.selectPaymentPet));
     });
     document.getElementById("extraCategory").addEventListener("change",renderExtraItemOptions);
     document.getElementById("extraItem").addEventListener("change",updateExtraUnitPrice);
@@ -34,40 +34,40 @@ document.addEventListener("DOMContentLoaded", async function() {
     document.getElementById("btnPaymentSuccess").addEventListener("click",submitUnifiedPayment);
     document.getElementById("btnPrintNewInvoice").addEventListener("click",function(){ const id=Number(this.dataset.invoiceId); if(id) printInvoice(id); });
 });
-async function loadPaymentThuCungs() {
-    paymentThuCungs=invoiceList(await apiRequest("/payment/eligible-pets"));
-    renderEligiblePaymentThuCungs();
+async function loadPaymentPets() {
+    paymentPets=invoiceList(await apiRequest("/payment/eligible-pets"));
+    renderEligiblePaymentPets();
 }
-function renderEligiblePaymentThuCungs() {
-    const body=document.getElementById("eligiblePaymentThuCungsBody");
+function renderEligiblePaymentPets() {
+    const body=document.getElementById("eligiblePaymentPetsBody");
     if(!body)return;
-    const keyword=(document.getElementById("paymentThuCungSearch").value||"").trim().toLowerCase();
-    const rows=paymentThuCungs.filter(p=>{
+    const keyword=(document.getElementById("paymentPetSearch").value||"").trim().toLowerCase();
+    const rows=paymentPets.filter(p=>{
         const owner=p.owner||{};
         return [p.mathucung,p.name,owner.name,owner.phone].some(v=>String(v||"").toLowerCase().includes(keyword));
     }).sort((a,b)=>{
-        if(Number(a.id)===Number(selectedPaymentThuCungId))return -1;
-        if(Number(b.id)===Number(selectedPaymentThuCungId))return 1;
+        if(Number(a.id)===Number(selectedPaymentPetId))return -1;
+        if(Number(b.id)===Number(selectedPaymentPetId))return 1;
         return 0;
     });
     body.innerHTML=rows.length?rows.map(p=>{
         const id=Number(p.id||p.pet_id), owner=p.owner||{};
-        const selected=id===Number(selectedPaymentThuCungId);
+        const selected=id===Number(selectedPaymentPetId);
         return '<tr'+(selected?' class="table-primary"':'')+'><td><strong>'+escapeInvoiceHtml(p.mathucung||"-")+'</strong> - '+escapeInvoiceHtml(p.name||"")+'</td><td>'+escapeInvoiceHtml(owner.name||"-")+'</td><td>'+escapeInvoiceHtml(owner.phone||"-")+'</td><td class="text-center"><button type="button" class="btn btn-sm '+(selected?'btn-primary':'btn-outline-primary')+'" data-select-payment-pet="'+id+'">Chọn</button></td></tr>';
-    }).join(""):'<tr><td colspan="4" class="text-center text-muted">'+(paymentThuCungs.length?'Không tìm thấy thú cưng phù hợp.':'Không có thú cưng đủ điều kiện thanh toán.')+'</td></tr>';
+    }).join(""):'<tr><td colspan="4" class="text-center text-muted">'+(paymentPets.length?'Không tìm thấy thú cưng phù hợp.':'Không có thú cưng đủ điều kiện thanh toán.')+'</td></tr>';
 }
-async function choosePaymentThuCung(id) {
-    if(Number(selectedPaymentThuCungId)===Number(id)&&paymentPreview)return;
-    selectedPaymentThuCungId=Number(id); paymentPreview=null; extraChargeLines=[];
+async function choosePaymentPet(id) {
+    if(Number(selectedPaymentPetId)===Number(id)&&paymentPreview)return;
+    selectedPaymentPetId=Number(id); paymentPreview=null; extraChargeLines=[];
     document.getElementById("unifiedPaymentResult").innerHTML="";
     document.getElementById("invoicePrintAction").classList.add("d-none");
     ["medicalChargesSection","extraServicesSection","finalPaymentSection"].forEach(id=>document.getElementById(id).classList.add("d-none"));
     document.getElementById("btnPaymentSuccess").disabled=true;
     try {
-        paymentPreview=invoiceUnwrap(await apiRequest("/payment/pets/"+selectedPaymentThuCungId+"/preview"));
+        paymentPreview=invoiceUnwrap(await apiRequest("/payment/pets/"+selectedPaymentPetId+"/preview"));
         const p=paymentPreview.pet||{};
-        renderEligiblePaymentThuCungs();
-        document.getElementById("paymentThuCungInfo").innerHTML="<strong>Đã chọn: "+escapeInvoiceHtml(p.mathucung)+" - "+escapeInvoiceHtml(p.ten_thucung)+"</strong> · Chủ nuôi: "+escapeInvoiceHtml(p.ten_chu_nuoi||"-")+" · SĐT: "+escapeInvoiceHtml(p.phone||"-");
+        renderEligiblePaymentPets();
+        document.getElementById("paymentPetInfo").innerHTML="<strong>Đã chọn: "+escapeInvoiceHtml(p.mathucung)+" - "+escapeInvoiceHtml(p.ten_thucung)+"</strong> · Chủ nuôi: "+escapeInvoiceHtml(p.ten_chu_nuoi||"-")+" · SĐT: "+escapeInvoiceHtml(p.phone||"-");
         const inventoryResponse = await apiRequest("/inventory");
         paymentCatalog = invoiceList(inventoryResponse).filter(x => ["DICH_VU_SPA","THUC_AN","DO_DUNG"].includes(x.danhmuc) && (x.danhmuc === "DICH_VU_SPA" || Number(x.tong_ton_kho ?? x.soluongton ?? 0) > 0));
         renderMedicalCharges(paymentPreview.charges||{});
@@ -79,7 +79,7 @@ async function choosePaymentThuCung(id) {
         renderExtraCharges(); recalculatePayment();
     } catch(e) {
         paymentPreview=null;
-        document.getElementById("paymentThuCungInfo").innerHTML='<span class="text-danger">'+escapeInvoiceHtml(e.message)+'</span>';
+        document.getElementById("paymentPetInfo").innerHTML='<span class="text-danger">'+escapeInvoiceHtml(e.message)+'</span>';
         ["medicalChargesSection","extraServicesSection","finalPaymentSection"].forEach(id=>document.getElementById(id).classList.add("d-none"));
     }
 }
@@ -124,31 +124,31 @@ function recalculatePayment() {
     body.innerHTML=lines.length?lines.map(x=>'<tr><td>'+escapeInvoiceHtml(x.name)+'</td><td>'+x.quantity+' '+escapeInvoiceHtml(x.unit||"")+'</td><td>'+invoiceMoney(x.price)+'</td><td>'+invoiceMoney(x.quantity*x.price)+'</td></tr>').join(""):'<tr><td colspan="4" class="text-center text-muted">Chưa có khoản phải trả.</td></tr>';
     const total=lines.reduce((s,x)=>s+x.quantity*x.price,0);
     document.getElementById("finalGrandTotal").textContent=invoiceMoney(total);
-    document.getElementById("btnPaymentSuccess").disabled=!selectedPaymentThuCungId||total<=0;
+    document.getElementById("btnPaymentSuccess").disabled=!selectedPaymentPetId||total<=0;
 }
 async function submitUnifiedPayment() {
-    if(!selectedPaymentThuCungId||!paymentPreview)return;
+    if(!selectedPaymentPetId||!paymentPreview)return;
     const total=medicalChargeLines.concat(extraChargeLines).reduce((s,x)=>s+x.quantity*x.price,0);
     if(total<=0){alert("Không có khoản thu để thanh toán.");return;}
     if(!confirm("Xác nhận chủ nuôi đã thanh toán "+invoiceMoney(total)+"?"))return;
     const button=document.getElementById("btnPaymentSuccess");button.disabled=true;
     try {
-        const response=await apiRequest("/payment/checkout",{method:"POST",body:JSON.stringify({pet_id:selectedPaymentThuCungId,payment_method:document.getElementById("finalPaymentMethod").value,items:extraChargeLines.map(x=>({item_id:x.item_id,quantity:x.quantity}))})});
+        const response=await apiRequest("/payment/checkout",{method:"POST",body:JSON.stringify({pet_id:selectedPaymentPetId,payment_method:document.getElementById("finalPaymentMethod").value,items:extraChargeLines.map(x=>({item_id:x.item_id,quantity:x.quantity}))})});
         const data=invoiceUnwrap(response);
         document.getElementById("unifiedPaymentResult").innerHTML='<div class="alert alert-success">Đã thanh toán và lập hóa đơn <strong>'+escapeInvoiceHtml(data.mahoadon)+'</strong> · Tổng tiền: <strong>'+invoiceMoney(data.tong_thanhtoan)+'</strong></div>';
         const printAction=document.getElementById("invoicePrintAction");
         const printButton=document.getElementById("btnPrintNewInvoice");
         printButton.dataset.invoiceId=String(Number(data.invoice_id));
         printAction.classList.remove("d-none");
-        selectedPaymentThuCungId=null;paymentPreview=null;
-        document.getElementById("paymentThuCungInfo").textContent="Đã thanh toán. Chọn thú cưng khác trong danh sách nếu cần.";
+        selectedPaymentPetId=null;paymentPreview=null;
+        document.getElementById("paymentPetInfo").textContent="Đã thanh toán. Chọn thú cưng khác trong danh sách nếu cần.";
         ["medicalChargesSection","extraServicesSection","finalPaymentSection"].forEach(id=>document.getElementById(id).classList.add("d-none"));
 
         // Giữ nguyên trang sau thanh toán: chỉ cập nhật danh sách hóa đơn và
         // làm mới dữ liệu thú cưng để lần thanh toán tiếp theo dùng dữ liệu mới.
         await Promise.all([
             loadInvoices(),
-            loadPaymentThuCungs().catch(function(err) {
+            loadPaymentPets().catch(function(err) {
                 console.error("Không thể làm mới danh sách thú cưng:", err);
             })
         ]);

@@ -12,7 +12,7 @@ class TiemChungController extends Controller
     {
         return response()->json([
             'status' => 'success',
-            'data' => DB::table('vaccination_types')
+            'data' => DB::table('loai_vac_xin')
                 ->where('is_active', true)
                 ->whereNotNull('inventory_item_id')
                 ->orderBy('vaccination_type_id')
@@ -22,11 +22,11 @@ class TiemChungController extends Controller
 
     public function petIndex($petId)
     {
-        abort_unless(DB::table('pets')->where('pet_id', $petId)->exists(), 404, 'Không tìm thấy thú cưng.');
+        abort_unless(DB::table('thu_cung')->where('pet_id', $petId)->exists(), 404, 'Không tìm thấy thú cưng.');
 
-        $rows = DB::table('pet_vaccinations as pv')
-            ->join('vaccination_types as vt', 'vt.vaccination_type_id', '=', 'pv.vaccination_type_id')
-            ->leftJoin('users as u', 'u.user_id', '=', 'pv.administered_by')
+        $rows = DB::table('lich_su_tiem_chung as pv')
+            ->join('loai_vac_xin as vt', 'vt.vaccination_type_id', '=', 'pv.vaccination_type_id')
+            ->leftJoin('nguoi_dung as u', 'u.user_id', '=', 'pv.administered_by')
             ->where('pv.pet_id', $petId)
             ->orderByDesc('pv.vaccinated_at')
             ->orderByDesc('pv.vaccination_id')
@@ -45,23 +45,23 @@ class TiemChungController extends Controller
 
     public function storeForPet(Request $request, $petId)
     {
-        abort_unless(DB::table('pets')->where('pet_id', $petId)->exists(), 404, 'Không tìm thấy thú cưng.');
+        abort_unless(DB::table('thu_cung')->where('pet_id', $petId)->exists(), 404, 'Không tìm thấy thú cưng.');
 
         $data = $request->validate([
-            'vaccination_type_id' => 'required|integer|exists:vaccination_types,vaccination_type_id',
+            'vaccination_type_id' => 'required|integer|exists:loai_vac_xin,vaccination_type_id',
             'vaccinated_at' => 'required|date',
             'next_due_date' => 'nullable|date|after_or_equal:vaccinated_at',
             'notes' => 'nullable|string|max:2000',
         ]);
 
-        $active = DB::table('vaccination_types')
+        $active = DB::table('loai_vac_xin')
             ->where('vaccination_type_id', $data['vaccination_type_id'])
             ->where('is_active', true)->exists();
         if (!$active) {
             return response()->json(['status' => 'error', 'message' => 'Loại vắc-xin này đã ngừng sử dụng.'], 422);
         }
 
-        $id = DB::table('pet_vaccinations')->insertGetId([
+        $id = DB::table('lich_su_tiem_chung')->insertGetId([
             'pet_id' => $petId,
             'vaccination_type_id' => $data['vaccination_type_id'],
             'vaccinated_at' => $data['vaccinated_at'],
@@ -75,13 +75,13 @@ class TiemChungController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Đã lưu lịch sử tiêm chủng.',
-            'data' => DB::table('pet_vaccinations')->where('vaccination_id', $id)->first(),
+            'data' => DB::table('lich_su_tiem_chung')->where('vaccination_id', $id)->first(),
         ], 201);
     }
 
     public function destroyForPet($petId, $id)
     {
-        $deleted = DB::table('pet_vaccinations')
+        $deleted = DB::table('lich_su_tiem_chung')
             ->where('pet_id', $petId)
             ->where('vaccination_id', $id)
             ->delete();
@@ -92,10 +92,10 @@ class TiemChungController extends Controller
 
     public function schedule()
     {
-        $rows = DB::table('pet_vaccinations as pv')
-            ->join('pets as p', 'p.pet_id', '=', 'pv.pet_id')
-            ->join('vaccination_types as vt', 'vt.vaccination_type_id', '=', 'pv.vaccination_type_id')
-            ->leftJoin('owners as o', 'o.owner_id', '=', 'p.owner_id')
+        $rows = DB::table('lich_su_tiem_chung as pv')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'pv.pet_id')
+            ->join('loai_vac_xin as vt', 'vt.vaccination_type_id', '=', 'pv.vaccination_type_id')
+            ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
             ->whereNotNull('pv.next_due_date')
             ->orderBy('pv.next_due_date')
             ->get([

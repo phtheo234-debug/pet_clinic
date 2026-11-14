@@ -11,7 +11,7 @@ class NguoiDung extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable; // Đã thêm HasFactory
 
-    protected $table = 'users';
+    protected $table = 'nguoi_dung';
     protected $primaryKey = 'user_id';
     public $timestamps = false; // CSDL dùng cột ngaytao
 

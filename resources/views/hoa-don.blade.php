@@ -1,22 +1,22 @@
-@extends('layouts.app')
-@section('title', 'Thanh toán - ThuCung Clinic')
+@extends('layouts.bo-cuc')
+@section('title', 'Thanh toán - Pet Clinic')
 @section('page_title', 'Thanh toán & Lập hóa đơn')
 @section('content')
 <div class="card shadow-sm mb-3">
  <div class="card-header bg-white font-weight-bold text-primary">BẢNG 1. DANH SÁCH THÚ CƯNG ĐỦ ĐIỀU KIỆN THANH TOÁN</div>
  <div class="card-body">
   <div class="form-group mb-3">
-   <label for="paymentThuCungSearch">Tìm kiếm theo mã thú cưng, tên thú, chủ nuôi hoặc số điện thoại</label>
-   <input id="paymentThuCungSearch" class="form-control" placeholder="Nhập thông tin cần tìm..." autocomplete="off">
+   <label for="paymentPetSearch">Tìm kiếm theo mã thú cưng, tên thú, chủ nuôi hoặc số điện thoại</label>
+   <input id="paymentPetSearch" class="form-control" placeholder="Nhập thông tin cần tìm..." autocomplete="off">
    <small class="form-text text-muted">Danh sách chỉ hiển thị thú cưng có khoản cần thanh toán và không ở trạng thái chờ khám/đang khám.</small>
   </div>
   <div class="table-responsive">
    <table class="table table-bordered table-hover table-sm mb-0">
     <thead class="thead-light"><tr><th>Mã - Tên thú cưng</th><th>Tên chủ nuôi</th><th>Số điện thoại</th><th class="text-center">Thao tác</th></tr></thead>
-    <tbody id="eligiblePaymentThuCungsBody"><tr><td colspan="4" class="text-center text-muted">Đang tải danh sách...</td></tr></tbody>
+    <tbody id="eligiblePaymentPetsBody"><tr><td colspan="4" class="text-center text-muted">Đang tải danh sách...</td></tr></tbody>
    </table>
   </div>
-  <div id="paymentThuCungInfo" class="text-muted small mt-3">Chưa chọn thú cưng để thanh toán.</div>
+  <div id="paymentPetInfo" class="text-muted small mt-3">Chưa chọn thú cưng để thanh toán.</div>
  </div>
 </div>
 <div class="card shadow-sm mb-3 d-none" id="medicalChargesSection">
@@ -42,5 +42,5 @@
 <div class="card shadow-sm"><div class="card-header bg-white font-weight-bold">Danh sách hóa đơn đã xuất</div><div class="card-body table-responsive"><table class="table table-hover mb-0"><thead class="thead-light"><tr><th>Mã HĐ</th><th>Thú cưng</th><th>Chủ nuôi</th><th>Tổng tiền</th><th>Thanh toán</th><th>Ngày tạo</th><th>In hóa đơn</th></tr></thead><tbody id="invoicesTableBody"><tr><td colspan="7" class="text-center text-muted">Đang tải danh sách hóa đơn...</td></tr></tbody></table></div></div>
 @endsection
 @push('scripts')
-<script src="{{ asset('js/hoa_don.js') }}?v={{ filemtime(public_path('js/hoa_don.js')) }}"></script>
+<script src="{{ asset('js/hoa-don.js') }}?v={{ filemtime(public_path('js/hoa-don.js')) }}"></script>
 @endpush

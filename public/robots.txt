@@ -1,2 +1,2 @@
-NguoiDung-agent: *
+User-agent: *
 Disallow:

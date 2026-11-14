@@ -1,30 +1,41 @@
 # Pet Clinic
 
-He thong quan ly phong kham thu y, xay dung bang Laravel 12, PHP 8.2+, MySQL, Blade, Bootstrap 4 va JavaScript.
-
-## Cong nghe
-- Backend: Laravel 12, PHP 8.2+, Eloquent ORM, Laravel Sanctum.
-- CSDL: MySQL.
-- Giao dien: Blade, Bootstrap 4.6.2, jQuery, Font Awesome, Chart.js.
-- Frontend: JavaScript thuan, Fetch API.
+He thong quan ly phong kham thu cung, xay dung bang Laravel 12, PHP 8.2+, MySQL/MariaDB, Blade, Bootstrap 4 va JavaScript.
 
 ## Cai dat
-1. Cai PHP 8.2+, Composer, MySQL va cac extension Laravel yeu cau.
-2. Chay 'composer install'.
-3. Sao chep '.env.example' thanh '.env', sau do cau hinh ket noi MySQL.
-4. Chay 'php artisan key:generate'.
-5. Tao CSDL 'pet_clinic' (hoac doi 'DB_DATABASE' trong '.env').
-6. Chay 'php artisan migrate'.
-7. (Tuy chon) Khai bao 'ADMIN_USERNAME', 'ADMIN_NAME', 'ADMIN_EMAIL', 'ADMIN_PASSWORD' trong '.env', sau do chay 'php artisan db:seed' de tao tai khoan quan tri ban dau. Khong co mat khau mau mac dinh.
-8. Chay 'php artisan serve'.
 
-## Du lieu danh muc
-Migration chi tao cau truc bang. Khong chen du lieu gia nhu "Vac-xin 1..6", khong tu tao vat tu/thuoc gia 0 dong, va khong tu nap danh muc phau thuat mau. Danh muc duoc quan tri vien them tu giao dien quan ly.
+1. Cai PHP 8.2+, Composer va MySQL/MariaDB.
+2. Tao database rong `pet_clinic`, charset `utf8mb4`.
+3. Chay `composer install`.
+4. Sao chep `.env.example` thanh `.env`, cap nhat thong tin ket noi MySQL.
+5. Chay `php artisan key:generate`.
+6. Chay `php artisan migrate`.
+7. Chay `php artisan serve` va mo `http://127.0.0.1:8000`.
 
-## CSDL va migrations
-Cac migration nghiep vu da duoc gom lai thanh mot migration khoi tao schema hien tai: 'database/migrations/2026_11_15_000000_tao_cac_bang_nghiep_vu.php'. Cac migration Laravel/Sanctum mac dinh duoc giu lai. CSDL moi can chay 'php artisan migrate' tu dau.
+## Tao tai khoan quan tri dau tien
 
-Luu y: bo migration moi nay danh cho CSDL moi cua repository 'pet_clinic'; khong chay 'migrate:fresh' tren CSDL cu neu con du lieu can giu. Cac ten bang va cot hien tai duoc giu nguyen de tranh lam vo cac truy van va API dang dung.
+Khong con tai khoan mau voi mat khau mac dinh. Sau khi migrate, chay `php artisan tinker` va tao tai khoan voi mat khau rieng:
 
-## Quy uoc ten
-Cac controller, model, middleware, service, view va JavaScript do du an tao da duoc chuyen sang ten tieng Viet khong dau. Cac ten va duong dan bat buoc cua Laravel/Composer duoc giu nguyen.
+```php
+\\App\\Models\\NguoiDung::create([
+    'username' => 'admin',
+    'mat_khau' => \\Illuminate\\Support\\Facades\\Hash::make('THAY_BANG_MAT_KHAU_RIENG'),
+    'ho_ten' => 'Quan tri vien',
+    'email' => 'admin@example.com',
+    'phone' => null,
+    'vaitro' => 'QUAN_TRI',
+    'trangthai' => 'HOAT_DONG',
+    'phai_doimatkhau' => true,
+    'ngaytao' => now(),
+]);
+```
+
+## Co so du lieu
+
+Cac bang nghiep vu dung ten tieng Viet khong dau: `nguoi_dung`, `chu_nuoi`, `thu_cung`, `long_nuoi`, `lich_su_can_nang`, `luot_luu_tru`, `yeu_cau_luu_tru`, `phieu_kham`, `hang_doi_kham`, `danh_muc_phau_thuat`, `kho_hang`, `lo_hang`, `don_thuoc`, `hoa_don`, `chi_tiet_hoa_don`, `luot_dich_vu_spa`, `loai_vac_xin`, `lich_su_tiem_chung`.
+
+Cac bang ha tang Laravel (`cache`, `jobs`, `sessions`, `personal_access_tokens`...) duoc giu lai de tuong thich cau hinh framework. Migration khong tu chen du lieu gia cho danh muc vac-xin, phau thuat, mat hang kho hoac tai khoan.
+
+Day la bo migration khoi tao cho database moi. Khong chay `migrate:fresh` tren database dang co du lieu can giu. Database cu can sao luu va chuyen du lieu rieng.
+
+Ten file va class do du an tao duoc doi sang tieng Viet khong dau. Ten bat buoc cua Laravel/Composer duoc giu nguyen. URL API duoc giu nguyen de khong lam dut cac request tu giao dien.

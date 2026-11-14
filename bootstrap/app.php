@@ -18,8 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\KiemTraVaiTro::class,
             'force.password.change' => \App\Http\Middleware\BatBuocDoiMatKhau::class,
-            'web.token' => \App\Http\Middleware\XacThucTokenWeb::class,
-            'web.role' => \App\Http\Middleware\WebKiemTraVaiTro::class,
+            'web.token' => \App\Http\Middleware\XacThucWebToken::class,
+            'web.role' => \App\Http\Middleware\KiemTraVaiTroWeb::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

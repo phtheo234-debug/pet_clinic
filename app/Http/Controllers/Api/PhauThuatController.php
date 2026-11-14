@@ -13,20 +13,20 @@ class PhauThuatController extends Controller
     {
         return response()->json([
             'status' => 'success',
-            'data' => DB::table('surgeries')->orderBy('ten_phauthuat')->get(),
+            'data' => DB::table('danh_muc_phau_thuat')->orderBy('ten_phauthuat')->get(),
         ]);
     }
 
     public function store(Request $request)
     {
         $fields = $request->validate([
-            'ma_phauthuat' => 'required|string|max:30|unique:surgeries,ma_phauthuat',
+            'ma_phauthuat' => 'required|string|max:30|unique:danh_muc_phau_thuat,ma_phauthuat',
             'ten_phauthuat' => 'required|string|max:100',
             'gia' => 'required|integer|min:0',
             'trangthai' => 'nullable|boolean',
         ]);
 
-        $id = DB::table('surgeries')->insertGetId([
+        $id = DB::table('danh_muc_phau_thuat')->insertGetId([
             'ma_phauthuat' => strtoupper(trim($fields['ma_phauthuat'])),
             'ten_phauthuat' => trim($fields['ten_phauthuat']),
             'gia' => $fields['gia'],
@@ -35,19 +35,19 @@ class PhauThuatController extends Controller
             'updated_at' => now(),
         ]);
 
-        return response()->json(['status' => 'success', 'data' => DB::table('surgeries')->where('surgery_id', $id)->first()], 201);
+        return response()->json(['status' => 'success', 'data' => DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->first()], 201);
     }
 
     public function update(Request $request, int $id)
     {
         $fields = $request->validate([
-            'ma_phauthuat' => ['required', 'string', 'max:30', Rule::unique('surgeries', 'ma_phauthuat')->ignore($id, 'surgery_id')],
+            'ma_phauthuat' => ['required', 'string', 'max:30', Rule::unique('danh_muc_phau_thuat', 'ma_phauthuat')->ignore($id, 'surgery_id')],
             'ten_phauthuat' => 'required|string|max:100',
             'gia' => 'required|integer|min:0',
             'trangthai' => 'required|boolean',
         ]);
 
-        DB::table('surgeries')->where('surgery_id', $id)->update([
+        DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->update([
             'ma_phauthuat' => strtoupper(trim($fields['ma_phauthuat'])),
             'ten_phauthuat' => trim($fields['ten_phauthuat']),
             'gia' => $fields['gia'],
@@ -55,18 +55,18 @@ class PhauThuatController extends Controller
             'updated_at' => now(),
         ]);
 
-        return response()->json(['status' => 'success', 'data' => DB::table('surgeries')->where('surgery_id', $id)->first()]);
+        return response()->json(['status' => 'success', 'data' => DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->first()]);
     }
 
     public function destroy(int $id)
     {
-        $used = DB::table('medical_records')->where('surgery_id', $id)->exists();
+        $used = DB::table('phieu_kham')->where('surgery_id', $id)->exists();
         if ($used) {
-            DB::table('surgeries')->where('surgery_id', $id)->update(['trangthai' => false, 'updated_at' => now()]);
+            DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->update(['trangthai' => false, 'updated_at' => now()]);
             return response()->json(['status' => 'success', 'message' => 'Loại phẫu thuật đã được sử dụng nên được ngừng áp dụng, không xóa lịch sử.']);
         }
 
-        DB::table('surgeries')->where('surgery_id', $id)->delete();
+        DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->delete();
         return response()->json(['status' => 'success', 'message' => 'Đã xóa loại phẫu thuật.']);
     }
 }

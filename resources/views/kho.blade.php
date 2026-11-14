@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.bo-cuc')
 
-@section('title', 'Quản lý kho - ThuCung Clinic')
+@section('title', 'Quản lý kho - Pet Clinic')
 @section('page_title', 'Quản lý các kho hàng & Dịch vụ')
 
 @section('content')

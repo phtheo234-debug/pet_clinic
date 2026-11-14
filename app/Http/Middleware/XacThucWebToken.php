@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
-class XacThucTokenWeb
+class XacThucWebToken
 {
     /**
      * Bảo vệ các trang Blade bằng Sanctum token được đồng bộ vào cookie.
@@ -38,7 +38,7 @@ class XacThucTokenWeb
         }
 
         if (!$user->phai_doimatkhau && $request->is('change-password')) {
-            return redirect()->route('dashboard');
+            return redirect()->route('tong-quan');
         }
 
         $request->attributes->set('web_authenticated_user', $user);

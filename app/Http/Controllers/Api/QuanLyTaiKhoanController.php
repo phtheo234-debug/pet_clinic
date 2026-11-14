@@ -8,14 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
-class QuanLyNguoiDungController extends Controller
+class QuanLyTaiKhoanController extends Controller
 {
     /**
      * Danh sách tài khoản nhân viên.
      */
     public function index()
     {
-        $users = NguoiDung::select(
+        $nguoi_dung = NguoiDung::select(
             'user_id',
             'username',
             'ho_ten',
@@ -32,7 +32,7 @@ class QuanLyNguoiDungController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $users
+            'data' => $nguoi_dung
         ]);
     }
 
@@ -71,7 +71,7 @@ class QuanLyNguoiDungController extends Controller
                 'required',
                 'string',
                 'max:50',
-                'unique:users,username'
+                'unique:nguoi_dung,username'
             ],
 
             'ho_ten' => [
@@ -84,7 +84,7 @@ class QuanLyNguoiDungController extends Controller
                 'required',
                 'email',
                 'max:100',
-                'unique:users,email'
+                'unique:nguoi_dung,email'
             ],
 
             'phone' => [
@@ -144,9 +144,9 @@ class QuanLyNguoiDungController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Không thể chỉnh sửa tài khoản quản trị hệ thống hoặc tài khoản đang đăng nhập.'], 403);
         }
         $fields = $request->validate([
-            'username' => ['required', 'string', 'max:50', Rule::unique('users', 'username')->ignore($user->user_id, 'user_id')],
+            'username' => ['required', 'string', 'max:50', Rule::unique('nguoi_dung', 'username')->ignore($user->user_id, 'user_id')],
             'ho_ten' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:100', Rule::unique('users', 'email')->ignore($user->user_id, 'user_id')],
+            'email' => ['required', 'email', 'max:100', Rule::unique('nguoi_dung', 'email')->ignore($user->user_id, 'user_id')],
             'phone' => ['nullable', 'string', 'max:20'],
             'vaitro' => ['required', Rule::in(['BAC_SI', 'NHAN_VIEN'])],
         ]);

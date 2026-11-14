@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đổi mật khẩu lần đầu - ThuCung Clinic</title>
+    <title>Đổi mật khẩu lần đầu - Pet Clinic</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/giao-dien.css') }}?v={{ filemtime(public_path('css/giao-dien.css')) }}">
 </head>
 <body class="auth-page">
     <div class="container">
@@ -19,7 +19,7 @@
                     </div>
                     <div class="card-body p-4">
                         <div class="alert alert-info">
-                            Vì lý do bảo mật, bạn cần đổi mật khẩu được cấp trước khi truy cập các chức năng của ThuCung Clinic.
+                            Vì lý do bảo mật, bạn cần đổi mật khẩu được cấp trước khi truy cập các chức năng của Pet Clinic.
                         </div>
                         <div id="changePasswordAlert" class="alert alert-danger d-none" role="alert"></div>
                         <form id="changePasswordForm">
@@ -63,7 +63,7 @@
             </div>
         </div>
     </div>
-    <script src="{{ asset('js/cau_hinh.js') }}"></script>
-    <script src="{{ asset('js/doi_mat_khau.js') }}"></script>
+    <script src="{{ asset('js/cau-hinh.js') }}"></script>
+    <script src="{{ asset('js/doi-mat-khau.js') }}"></script>
 </body>
 </html>

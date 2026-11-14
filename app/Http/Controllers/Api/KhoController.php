@@ -14,22 +14,22 @@ class KhoController extends Controller
      */
     public function index()
     {
-        DB::table('inventory_batches')
+        DB::table('lo_hang')
             ->whereNotNull('ngayhethan')
             ->whereDate('ngayhethan', '<', now()->toDateString())
             ->where('trangthai', 'DANG_SU_DUNG')
             ->update(['trangthai' => 'HET_HAN']);
 
-        $items = DB::table('inventory')->get();
+        $items = DB::table('kho_hang')->get();
 
         foreach ($items as $item) {
             if (in_array($item->danhmuc, ['THUOC', 'VAC_XIN', 'THUC_AN'], true)) {
-                $item->batches = DB::table('inventory_batches')
+                $item->batches = DB::table('lo_hang')
                     ->where('item_id', $item->item_id)
                     ->orderBy('ngayhethan')
                     ->orderBy('batch_id')
                     ->get();
-                $item->tong_ton_kho = (int) DB::table('inventory_batches')
+                $item->tong_ton_kho = (int) DB::table('lo_hang')
                     ->where('item_id', $item->item_id)
                     ->where('trangthai', 'DANG_SU_DUNG')
                     ->where('soluong', '>', 0)
@@ -70,7 +70,7 @@ class KhoController extends Controller
     {
         
         $fields = $request->validate([
-            'masanpham'       => 'required|string|max:20|unique:inventory,masanpham',
+            'masanpham'       => 'required|string|max:20|unique:kho_hang,masanpham',
             'ten_sanpham'     => 'required|string|max:100',
             'danhmuc'         => 'required|in:THUOC,VAC_XIN,THUC_AN,DO_DUNG,DICH_VU_SPA',
             'donvitinh'       => 'required|string|max:20',
@@ -83,7 +83,7 @@ class KhoController extends Controller
         ]);
 
 
-        $id = DB::table('inventory')->insertGetId([
+        $id = DB::table('kho_hang')->insertGetId([
             'masanpham'       => $fields['masanpham'],
             'ten_sanpham'     => $fields['ten_sanpham'],
             'danhmuc'         => $fields['danhmuc'],
@@ -97,7 +97,7 @@ class KhoController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => 'Thêm danh mục sản phẩm/dịch vụ thành công!',
-            'data'    => DB::table('inventory')->where('item_id', $id)->first()
+            'data'    => DB::table('kho_hang')->where('item_id', $id)->first()
         ], 201);
     }
 
@@ -107,7 +107,7 @@ class KhoController extends Controller
     public function importBatch(Request $request)
     {
         $fields = $request->validate([
-            'item_id'    => 'required|integer|exists:inventory,item_id',
+            'item_id'    => 'required|integer|exists:kho_hang,item_id',
             'solo'       => 'required|string|max:50|regex:/^LO-[0-9]{8}-[0-9]{6}$/',
             'soluong'    => 'required|integer|min:1',
             'ngaynhap'   => 'required|date|before_or_equal:today',
@@ -115,18 +115,18 @@ class KhoController extends Controller
             'ngayhethan' => 'required|date|after:ngaysanxuat|after:ngaynhap|after_or_equal:today',
         ]);
 
-        $itemCategory = DB::table('inventory')->where('item_id', $fields['item_id'])->value('danhmuc');
+        $itemCategory = DB::table('kho_hang')->where('item_id', $fields['item_id'])->value('danhmuc');
         if ($itemCategory === 'DO_DUNG') {
             return response()->json(['status' => 'error', 'message' => 'Kho đồ dùng không nhập theo lô. Vui lòng cập nhật số lượng trực tiếp tại bảng kho đồ dùng.'], 422);
         }
         if (in_array($itemCategory, ['THUOC', 'VAC_XIN', 'THUC_AN'], true)
-            && DB::table('inventory_batches')->where('item_id', $fields['item_id'])->where('solo', $fields['solo'])->exists()) {
+            && DB::table('lo_hang')->where('item_id', $fields['item_id'])->where('solo', $fields['solo'])->exists()) {
             return response()->json(['status' => 'error', 'message' => 'Mã lô đã tồn tại, vui lòng tạo mã lô mới.'], 422);
         }
 
         try {
             $batchId = DB::transaction(function () use ($fields) {
-                $item = DB::table('inventory')
+                $item = DB::table('kho_hang')
                     ->where('item_id', $fields['item_id'])
                     ->lockForUpdate()
                     ->first();
@@ -135,7 +135,7 @@ class KhoController extends Controller
                     throw new Exception('Chỉ được nhập lô cho mặt hàng hàng hóa trong kho.');
                 }
 
-                $batchId = DB::table('inventory_batches')->insertGetId([
+                $batchId = DB::table('lo_hang')->insertGetId([
                     'item_id'    => $fields['item_id'],
                     'solo'       => $fields['solo'],
                     'soluong'    => $fields['soluong'],
@@ -156,7 +156,7 @@ class KhoController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => 'Nhập lô hàng thành công!',
-            'data'    => DB::table('inventory_batches')->where('batch_id', $batchId)->first()
+            'data'    => DB::table('lo_hang')->where('batch_id', $batchId)->first()
         ], 201);
     }
 
@@ -164,13 +164,13 @@ class KhoController extends Controller
     /** Xóa lô đã hết hạn sau khi admin xác nhận đã xử lý hàng tồn. */
     public function deleteExpiredBatch(int $batchId)
     {
-        $batch = DB::table('inventory_batches')->where('batch_id', $batchId)->first();
+        $batch = DB::table('lo_hang')->where('batch_id', $batchId)->first();
         if (!$batch || !$batch->ngayhethan || $batch->ngayhethan >= now()->toDateString()
             || $batch->trangthai !== 'HET_HAN') {
             return response()->json(['status' => 'error', 'message' => 'Chỉ được xóa lô đã hết hạn.'], 422);
         }
 
-        DB::table('inventory_batches')->where('batch_id', $batchId)->delete();
+        DB::table('lo_hang')->where('batch_id', $batchId)->delete();
         return response()->json(['status' => 'success', 'message' => 'Đã xóa lô hàng hết hạn.']);
     }
 
@@ -180,7 +180,7 @@ class KhoController extends Controller
     public function exportMedicineFEFO(Request $request)
     {
         $request->validate([
-            'medicine_id'  => 'required|integer|exists:inventory,item_id',
+            'medicine_id'  => 'required|integer|exists:kho_hang,item_id',
             'required_qty' => 'required|integer|min:1',
         ]);
 
@@ -211,12 +211,12 @@ class KhoController extends Controller
             throw new Exception('Số lượng xuất phải lớn hơn 0.');
         }
 
-        $item = DB::table('inventory')->where('item_id', $itemId)->lockForUpdate()->first();
+        $item = DB::table('kho_hang')->where('item_id', $itemId)->lockForUpdate()->first();
         if (!$item || !in_array($item->danhmuc, ['THUOC', 'VAC_XIN', 'THUC_AN'], true)) {
             throw new Exception('Mặt hàng không hợp lệ để xuất kho.');
         }
 
-        $batches = DB::table('inventory_batches')
+        $batches = DB::table('lo_hang')
             ->where('item_id', $itemId)
             ->where('soluong', '>', 0)
             ->where('trangthai', 'DANG_SU_DUNG')
@@ -240,7 +240,7 @@ class KhoController extends Controller
             $take = min($batch->soluong, $remaining);
 
             // Trừ số lượng kho của lô bằng decrement
-            DB::table('inventory_batches')
+            DB::table('lo_hang')
                 ->where('batch_id', $batch->batch_id)
                 ->decrement('soluong', $take);
 

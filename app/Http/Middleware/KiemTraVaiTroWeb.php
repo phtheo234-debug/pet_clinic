@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class WebKiemTraVaiTro
+class KiemTraVaiTroWeb
 {
     /**
      * Chỉ cho phép người dùng thuộc danh sách vai trò mở trang giao diện.

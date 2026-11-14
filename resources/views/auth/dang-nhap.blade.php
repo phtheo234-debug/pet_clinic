@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập - ThuCung Clinic System</title>
+    <title>Đăng nhập - Pet Clinic System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/giao_dien.css') }}?v={{ filemtime(public_path('css/giao_dien.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/giao-dien.css') }}?v={{ filemtime(public_path('css/giao-dien.css')) }}">
 </head>
 <body class="auth-page">
     <div class="container">
@@ -43,7 +43,7 @@
             </div>
         </div>
     </div>
-    <script src="{{ asset('js/cau_hinh.js') }}"></script>
-    <script src="{{ asset('js/xac_thuc.js') }}"></script>
+    <script src="{{ asset('js/cau-hinh.js') }}"></script>
+    <script src="{{ asset('js/xac-thuc.js') }}"></script>
 </body>
 </html>

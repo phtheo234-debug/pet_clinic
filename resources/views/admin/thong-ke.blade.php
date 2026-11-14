@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.bo-cuc')
 
-@section('title', 'Thống kê doanh thu - ThuCung Clinic')
+@section('title', 'Thống kê doanh thu - Pet Clinic')
 @section('page_title', 'Thống kê doanh thu')
 
 @section('content')
@@ -180,5 +180,5 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="{{ asset('js/thong_ke_quan_tri.js') }}?v={{ filemtime(public_path('js/thong_ke_quan_tri.js')) }}"></script>
+<script src="{{ asset('js/thong-ke-quan-tri.js') }}?v={{ filemtime(public_path('js/thong-ke-quan-tri.js')) }}"></script>
 @endpush

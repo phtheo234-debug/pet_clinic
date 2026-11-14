@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-class ThongKeController extends Controller
+class TongQuanController extends Controller
 {
     /**
      * FR-STAT-01: Chỉ số Dashboard tổng quan thời gian thực
@@ -16,10 +16,10 @@ class ThongKeController extends Controller
     {
         $today = Carbon::today();
 
-        $soCaKhamNgay = DB::table('medical_records')->whereDate('ngaykham', $today)->count();
-        $soThuNoiTru  = DB::table('pets')->where('trangthai', 'NOI_TRU')->count();
-        $soLongTrong  = DB::table('cages')->where('trangthai', 'CON_TRONG')->count();
-        $doanhThuNgay = DB::table('invoices')->where('trangthai', 'DA_THANH_TOAN')->whereDate('ngaytao', $today)->sum('tongtien');
+        $soCaKhamNgay = DB::table('phieu_kham')->whereDate('ngaykham', $today)->count();
+        $soThuNoiTru  = DB::table('thu_cung')->where('trangthai', 'NOI_TRU')->count();
+        $soLongTrong  = DB::table('long_nuoi')->where('trangthai', 'CON_TRONG')->count();
+        $doanhThuNgay = DB::table('hoa_don')->where('trangthai', 'DA_THANH_TOAN')->whereDate('ngaytao', $today)->sum('tongtien');
 
         return response()->json([
             'status' => 'success',
@@ -41,14 +41,14 @@ class ThongKeController extends Controller
         $today = Carbon::today();
         $sixMonths = Carbon::today()->addMonths(6);
 
-        DB::table('inventory_batches')
+        DB::table('lo_hang')
             ->whereNotNull('ngayhethan')
             ->whereDate('ngayhethan', '<', $today->toDateString())
             ->where('trangthai', 'DANG_SU_DUNG')
             ->update(['trangthai' => 'HET_HAN']);
 
-        $base = DB::table('inventory_batches as b')
-            ->join('inventory as i', 'i.item_id', '=', 'b.item_id')
+        $base = DB::table('lo_hang as b')
+            ->join('kho_hang as i', 'i.item_id', '=', 'b.item_id')
             ->whereIn('i.danhmuc', ['THUOC', 'VAC_XIN', 'THUC_AN'])
             ->where('b.soluong', '>', 0)
             ->select('b.batch_id', 'i.masanpham', 'i.ten_sanpham', 'i.danhmuc',
@@ -64,8 +64,8 @@ class ThongKeController extends Controller
             ->orderBy('b.ngayhethan')->get();
 
         // Tồn thuốc/vắc-xin/thức ăn được cộng từ các lô còn sử dụng;
-        // đồ dùng lấy trực tiếp từ inventory.soluongton. Không đưa kho dịch vụ vào cảnh báo.
-        $batchStocks = DB::table('inventory_batches')
+        // đồ dùng lấy trực tiếp từ kho_hang.soluongton. Không đưa kho dịch vụ vào cảnh báo.
+        $batchStocks = DB::table('lo_hang')
             ->where('trangthai', 'DANG_SU_DUNG')
             ->where(function ($query) use ($today) {
                 $query->whereNull('ngayhethan')
@@ -74,7 +74,7 @@ class ThongKeController extends Controller
             ->groupBy('item_id')
             ->select('item_id', DB::raw('SUM(soluong) as tong_ton'));
 
-        $lowStockRows = DB::table('inventory as i')
+        $lowStockRows = DB::table('kho_hang as i')
             ->leftJoinSub($batchStocks, 'stock', function ($join) {
                 $join->on('stock.item_id', '=', 'i.item_id');
             })
@@ -130,15 +130,15 @@ class ThongKeController extends Controller
         $thang = Carbon::createFromFormat('Y-m-d', ($validated['thang'] ?? Carbon::today()->format('Y-m')) . '-01')->startOfMonth();
         $nam = (int) ($validated['nam'] ?? Carbon::today()->year);
 
-        $paidInvoices = DB::table('invoices')->where('trangthai', 'DA_THANH_TOAN');
+        $paidInvoices = DB::table('hoa_don')->where('trangthai', 'DA_THANH_TOAN');
         $sumInvoices = function (Carbon $from, Carbon $to) use ($paidInvoices) {
             return (clone $paidInvoices)->whereBetween(DB::raw('DATE(ngaytao)'), [
                 $from->toDateString(), $to->toDateString()
             ]);
         };
         $categoryTotals = function (Carbon $from, Carbon $to) {
-            return DB::table('invoice_details as detail')
-                ->join('invoices as invoice', 'invoice.invoice_id', '=', 'detail.invoice_id')
+            return DB::table('chi_tiet_hoa_don as detail')
+                ->join('hoa_don as invoice', 'invoice.invoice_id', '=', 'detail.invoice_id')
                 ->where('invoice.trangthai', 'DA_THANH_TOAN')
                 ->whereBetween(DB::raw('DATE(invoice.ngaytao)'), [$from->toDateString(), $to->toDateString()])
                 ->select('detail.loai_chiphi',
@@ -183,7 +183,7 @@ class ThongKeController extends Controller
                 'ngay' => $ngay->toDateString(),
                 'tong_doanh_thu_ngay' => $dayTotal,
                 'so_hoa_don_ngay' => $dayCount,
-                'so_ca_kham' => (int) DB::table('medical_records')->whereDate('ngaykham', $ngay->toDateString())->count(),
+                'so_ca_kham' => (int) DB::table('phieu_kham')->whereDate('ngaykham', $ngay->toDateString())->count(),
                 'theo_loai_chi_phi_ngay' => $dayCategories,
                 'tuan_tu_ngay' => $tuan->toDateString(),
                 'tuan_den_ngay' => $weekEnd->toDateString(),

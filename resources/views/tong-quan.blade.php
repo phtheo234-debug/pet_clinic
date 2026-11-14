@@ -1,12 +1,12 @@
-@extends('layouts.app')
+@extends('layouts.bo-cuc')
 
-@section('title', 'Dashboard - ThuCung Clinic')
+@section('title', 'Dashboard - Pet Clinic')
 @section('page_title', 'Tổng quan Hoạt động Phòng khám')
 
 @section('content')
 @php
-    $dashboardNguoiDung = request()->attributes->get('web_authenticated_user');
-    $isDashboardDoctor = strtoupper(trim($dashboardNguoiDung->vaitro ?? '')) === 'BAC_SI';
+    $dashboardUser = request()->attributes->get('web_authenticated_user');
+    $isDashboardDoctor = strtoupper(trim($dashboardUser->vaitro ?? '')) === 'BAC_SI';
 @endphp
 <div class="row">
     <div class="col-md-3 mb-3">
@@ -39,5 +39,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/tong_quan.js') }}"></script>
+<script src="{{ asset('js/tong-quan.js') }}"></script>
 @endpush

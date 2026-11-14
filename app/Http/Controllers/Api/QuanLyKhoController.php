@@ -15,7 +15,7 @@ class QuanLyKhoController extends Controller
     public function store(Request $request)
     {
         $fields = $request->validate([
-            'masanpham' => ['required', 'string', 'max:50', 'regex:/^(THUOC|VACXIN|THUCAN|DODUNG)-[0-9]{8}-[0-9]{6}$/', 'unique:inventory,masanpham'],
+            'masanpham' => ['required', 'string', 'max:50', 'regex:/^(THUOC|VACXIN|THUCAN|DODUNG)-[0-9]{8}-[0-9]{6}$/', 'unique:kho_hang,masanpham'],
             'ten_sanpham' => 'required|string|max:100',
             'danhmuc' => ['required', Rule::in(self::CATEGORIES)],
             'donvitinh' => 'nullable|string|max:20',
@@ -28,7 +28,7 @@ class QuanLyKhoController extends Controller
         ]);
 
         if ($fields['danhmuc'] === 'VAC_XIN'
-            && DB::table('vaccination_types')->where('name', $fields['ten_sanpham'])->whereNotNull('inventory_item_id')->exists()) {
+            && DB::table('loai_vac_xin')->where('name', $fields['ten_sanpham'])->whereNotNull('inventory_item_id')->exists()) {
             return response()->json(['status' => 'error', 'message' => 'Tên vắc-xin này đã có trong kho. Hãy mở mặt hàng hiện có để cập nhật hoặc nhập thêm lô.'], 422);
         }
 
@@ -37,16 +37,16 @@ class QuanLyKhoController extends Controller
         }
 
         $item = DB::transaction(function () use ($fields) {
-            $id = DB::table('inventory')->insertGetId(
+            $id = DB::table('kho_hang')->insertGetId(
                 array_merge($this->values($fields), ['masanpham' => $fields['masanpham']])
             );
 
             if (in_array($fields['danhmuc'], self::BATCH_CATEGORIES, true) && (int) $fields['soluong'] > 0) {
                 $lotCode = $fields['solo'] ?? ('LO-' . now()->format('Ymd') . '-' . str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT));
-                if (DB::table('inventory_batches')->where('item_id', $id)->where('solo', $lotCode)->exists()) {
+                if (DB::table('lo_hang')->where('item_id', $id)->where('solo', $lotCode)->exists()) {
                     throw new \RuntimeException('Mã lô vừa tạo đã tồn tại. Vui lòng thử lưu lại để tạo mã mới.');
                 }
-                DB::table('inventory_batches')->insert([
+                DB::table('lo_hang')->insert([
                     'item_id' => $id,
                     'solo' => $lotCode,
                     'soluong' => (int) $fields['soluong'],
@@ -58,15 +58,15 @@ class QuanLyKhoController extends Controller
             }
 
             if ($fields['danhmuc'] === 'VAC_XIN') {
-                $existingType = DB::table('vaccination_types')->where('name', $fields['ten_sanpham'])->first();
+                $existingType = DB::table('loai_vac_xin')->where('name', $fields['ten_sanpham'])->first();
                 if ($existingType) {
-                    DB::table('vaccination_types')->where('vaccination_type_id', $existingType->vaccination_type_id)->update([
+                    DB::table('loai_vac_xin')->where('vaccination_type_id', $existingType->vaccination_type_id)->update([
                         'inventory_item_id' => $id,
                         'is_active' => true,
                         'updated_at' => now(),
                     ]);
                 } else {
-                    DB::table('vaccination_types')->insert([
+                    DB::table('loai_vac_xin')->insert([
                         'name' => $fields['ten_sanpham'],
                         'inventory_item_id' => $id,
                         'is_active' => true,
@@ -76,7 +76,7 @@ class QuanLyKhoController extends Controller
                 }
             }
 
-            return DB::table('inventory')->where('item_id', $id)->first();
+            return DB::table('kho_hang')->where('item_id', $id)->first();
         });
 
         return response()->json([
@@ -88,7 +88,7 @@ class QuanLyKhoController extends Controller
 
     public function update(Request $request, int $id)
     {
-        $item = DB::table('inventory')->where('item_id', $id)->first();
+        $item = DB::table('kho_hang')->where('item_id', $id)->first();
         if (!$item || !in_array($item->danhmuc, self::CATEGORIES, true)) {
             return response()->json(['status' => 'error', 'message' => 'Không tìm thấy mặt hàng.'], 404);
         }
@@ -109,20 +109,20 @@ class QuanLyKhoController extends Controller
         }
 
         if ($item->danhmuc !== $fields['danhmuc']
-            && DB::table('inventory_batches')->where('item_id', $id)->exists()) {
+            && DB::table('lo_hang')->where('item_id', $id)->exists()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Không thể đổi loại kho khi mặt hàng đã có lịch sử nhập lô. Hãy tạo mặt hàng mới để giữ đúng lịch sử tồn kho.',
             ], 422);
         }
 
-        $linkedVaccine = DB::table('vaccination_types')->where('inventory_item_id', $id)->first();
+        $linkedVaccine = DB::table('loai_vac_xin')->where('inventory_item_id', $id)->first();
         if ($linkedVaccine && $fields['danhmuc'] !== 'VAC_XIN') {
             return response()->json(['status' => 'error', 'message' => 'Mặt hàng đang liên kết với danh mục tiêm chủng nên không thể đổi khỏi loại Vắc-xin.'], 422);
         }
 
         if ($item->danhmuc === 'THUOC' && $fields['danhmuc'] !== 'THUOC'
-            && DB::table('prescriptions')->where('item_id', $id)->exists()) {
+            && DB::table('don_thuoc')->where('item_id', $id)->exists()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Không thể đổi danh mục thuốc đã từng được kê đơn.',
@@ -137,9 +137,9 @@ class QuanLyKhoController extends Controller
             $values['soluongton'] = 0;
         }
 
-        DB::table('inventory')->where('item_id', $id)->update($values);
+        DB::table('kho_hang')->where('item_id', $id)->update($values);
         if ($linkedVaccine) {
-            DB::table('vaccination_types')->where('inventory_item_id', $id)->update([
+            DB::table('loai_vac_xin')->where('inventory_item_id', $id)->update([
                 'name' => $fields['ten_sanpham'],
                 'updated_at' => now(),
             ]);
@@ -148,26 +148,26 @@ class QuanLyKhoController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Đã cập nhật mặt hàng.',
-            'data' => DB::table('inventory')->where('item_id', $id)->first(),
+            'data' => DB::table('kho_hang')->where('item_id', $id)->first(),
         ]);
     }
 
     public function destroy(int $id)
     {
         return DB::transaction(function () use ($id) {
-            $item = DB::table('inventory')->where('item_id', $id)->lockForUpdate()->first();
+            $item = DB::table('kho_hang')->where('item_id', $id)->lockForUpdate()->first();
             if (!$item || !in_array($item->danhmuc, self::CATEGORIES, true)) {
                 return response()->json(['status' => 'error', 'message' => 'Không tìm thấy mặt hàng.'], 404);
             }
 
-            if (DB::table('vaccination_types')->where('inventory_item_id', $id)->exists()) {
+            if (DB::table('loai_vac_xin')->where('inventory_item_id', $id)->exists()) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Mặt hàng đang được liên kết với danh mục vắc-xin. Hãy xóa/ngừng loại vắc-xin trong quản lý danh mục trước.',
                 ], 422);
             }
 
-            if (DB::table('inventory_batches')->where('item_id', $id)->exists()) {
+            if (DB::table('lo_hang')->where('item_id', $id)->exists()) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Không thể xóa mặt hàng đã có lô nhập kho. Hãy giữ lại để bảo toàn lịch sử tồn kho.',
@@ -181,14 +181,14 @@ class QuanLyKhoController extends Controller
                 ], 422);
             }
 
-            if (DB::table('prescriptions')->where('item_id', $id)->exists()) {
+            if (DB::table('don_thuoc')->where('item_id', $id)->exists()) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Không thể xóa thuốc đã từng được kê đơn để bảo toàn lịch sử khám chữa bệnh.',
                 ], 422);
             }
 
-            DB::table('inventory')->where('item_id', $id)->delete();
+            DB::table('kho_hang')->where('item_id', $id)->delete();
 
             return response()->json(['status' => 'success', 'message' => 'Đã xóa mặt hàng.']);
         });

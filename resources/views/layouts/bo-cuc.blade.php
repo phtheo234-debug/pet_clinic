@@ -14,14 +14,14 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <link rel="stylesheet"
-          href="{{ asset('css/giao_dien.css') }}?v={{ filemtime(public_path('css/giao_dien.css')) }}">
+          href="{{ asset('css/giao-dien.css') }}?v={{ filemtime(public_path('css/giao-dien.css')) }}">
 </head>
 
 <body>
 
     @php
-        $currentNguoiDung = request()->attributes->get('web_authenticated_user');
-        $role = strtoupper(trim($currentNguoiDung->vaitro ?? ''));
+        $currentUser = request()->attributes->get('web_authenticated_user');
+        $role = strtoupper(trim($currentUser->vaitro ?? ''));
     @endphp
 
     <div class="wrapper">
@@ -45,8 +45,8 @@
             <ul class="list-unstyled components">
 
                 {{-- Thông tin tài khoản --}}
-                <li class="{{ request()->routeIs('profile') ? 'active' : '' }}">
-                    <a href="{{ route('profile') }}">
+                <li class="{{ request()->routeIs('ho-so-ca-nhan') ? 'active' : '' }}">
+                    <a href="{{ route('ho-so-ca-nhan') }}">
                         <i class="fas fa-user-cog"></i>
                         Thông tin tài khoản
                     </a>
@@ -56,15 +56,15 @@
                 {{-- Chỉ quản trị viên --}}
                 @if($role === 'QUAN_TRI')
 
-                    <li class="{{ request()->routeIs('admin.nguoi_dung') ? 'active' : '' }}">
-                        <a href="{{ route('admin.nguoi_dung') }}">
+                    <li class="{{ request()->routeIs('admin.tai-khoan') ? 'active' : '' }}">
+                        <a href="{{ route('admin.tai-khoan') }}">
                             <i class="fas fa-users-cog"></i>
                             Quản lý tài khoản
                         </a>
                     </li>
 
-                    <li class="{{ request()->routeIs('admin.thong_ke') ? 'active' : '' }}">
-                        <a href="{{ route('admin.thong_ke') }}">
+                    <li class="{{ request()->routeIs('admin.thong-ke') ? 'active' : '' }}">
+                        <a href="{{ route('admin.thong-ke') }}">
                             <i class="fas fa-chart-pie"></i>
                             Thống kê doanh thu
                         </a>
@@ -74,8 +74,8 @@
 
 
                 {{-- Tổng quan --}}
-                <li class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <a href="{{ route('dashboard') }}">
+                <li class="{{ request()->routeIs('tong-quan') ? 'active' : '' }}">
+                    <a href="{{ route('tong-quan') }}">
                         <i class="fas fa-chart-line"></i>
                         Tổng quan (Dashboard)
                     </a>
@@ -83,8 +83,8 @@
 
 
                 {{-- Chủ nuôi và thú cưng --}}
-                <li class="{{ request()->routeIs('pets') ? 'active' : '' }}">
-                    <a href="{{ route('pets') }}">
+                <li class="{{ request()->routeIs('thu-cung') ? 'active' : '' }}">
+                    <a href="{{ route('thu-cung') }}">
                         <i class="fas fa-paw"></i>
                         Chủ nuôi & Thú cưng
                     </a>
@@ -92,8 +92,8 @@
 
 
                 {{-- Lồng lưu trú: tất cả vai trò được xem --}}
-                <li class="{{ request()->routeIs('cages') ? 'active' : '' }}">
-                    <a href="{{ route('cages') }}">
+                <li class="{{ request()->routeIs('long-nuoi') ? 'active' : '' }}">
+                    <a href="{{ route('long-nuoi') }}">
                         <i class="fas fa-home"></i>
                         Lồng lưu trú nội trú
                     </a>
@@ -103,8 +103,8 @@
                 {{-- Bác sĩ và quản trị viên --}}
                 @if(in_array($role, ['QUAN_TRI', 'BAC_SI'], true))
 
-                    <li class="{{ request()->routeIs('medical') ? 'active' : '' }}">
-                        <a href="{{ route('medical') }}">
+                    <li class="{{ request()->routeIs('kham-benh') ? 'active' : '' }}">
+                        <a href="{{ route('kham-benh') }}">
                             <i class="fas fa-stethoscope"></i>
                             Khám bệnh & Kê đơn
                         </a>
@@ -114,8 +114,8 @@
 
 
                 {{-- Quản lý các kho hàng --}}
-                <li class="{{ request()->routeIs('inventory') ? 'active' : '' }}">
-                    <a href="{{ route('inventory') }}">
+                <li class="{{ request()->routeIs('kho') ? 'active' : '' }}">
+                    <a href="{{ route('kho') }}">
                         <i class="fas fa-pills"></i>
                         Quản lý kho
                     </a>
@@ -125,8 +125,8 @@
                 {{-- Nhân viên và quản trị viên --}}
                 @if(in_array($role, ['QUAN_TRI', 'NHAN_VIEN'], true))
 
-                    <li class="{{ request()->routeIs('invoices') ? 'active' : '' }}">
-                        <a href="{{ route('invoices') }}">
+                    <li class="{{ request()->routeIs('hoa-don') ? 'active' : '' }}">
+                        <a href="{{ route('hoa-don') }}">
                             <i class="fas fa-file-invoice-dollar"></i>
                             Thanh toán POS
                         </a>
@@ -154,11 +154,11 @@
 
                         <i class="fas fa-user-circle mr-1 text-primary"></i>
 
-                        <strong id="navNguoiDungName">
+                        <strong id="navUserName">
                             Đang tải...
                         </strong>
 
-                        <span id="navNguoiDungRole"
+                        <span id="navUserRole"
                               class="badge badge-info ml-1">
                         </span>
 
@@ -194,7 +194,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="{{ asset('js/cau_hinh.js') }}"></script>
+    <script src="{{ asset('js/cau-hinh.js') }}"></script>
 
     {{-- Script riêng của từng trang --}}
     @stack('scripts')

@@ -20,25 +20,25 @@ class ThanhToanController extends Controller
      */
     public function index()
     {
-        $invoices = DB::table('invoices as i')
-            ->leftJoin('pets as p', 'p.pet_id', '=', 'i.pet_id')
-            ->leftJoin('owners as o', 'o.owner_id', '=', 'i.owner_id')
+        $hoa_don = DB::table('hoa_don as i')
+            ->leftJoin('thu_cung as p', 'p.pet_id', '=', 'i.pet_id')
+            ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'i.owner_id')
             ->select('i.*', 'p.ten_thucung', 'p.mathucung', 'o.ho_ten as ten_chu_nuoi', 'o.phone')
             ->orderByDesc('i.ngaytao')
             ->get();
 
         return response()->json([
             'status' => 'success',
-            'data'   => $invoices
+            'data'   => $hoa_don
         ]);
     }
 
     
     public function show($id)
     {
-        $invoice = DB::table('invoices as i')
-            ->join('pets as p', 'p.pet_id', '=', 'i.pet_id')
-            ->join('owners as o', 'o.owner_id', '=', 'i.owner_id')
+        $invoice = DB::table('hoa_don as i')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'i.pet_id')
+            ->join('chu_nuoi as o', 'o.owner_id', '=', 'i.owner_id')
             ->where('i.invoice_id', $id)
             ->select(
                 'i.*',
@@ -59,7 +59,7 @@ class ThanhToanController extends Controller
         }
 
         // Lấy chi tiết thuốc và phí lưu trú đã lưu tại thời điểm thanh toán
-        $details = DB::table('invoice_details')
+        $details = DB::table('chi_tiet_hoa_don')
             ->where('invoice_id', $id)
             ->select(
                 'detail_id',
@@ -94,16 +94,16 @@ class ThanhToanController extends Controller
     public function createRetailInvoice(Request $request)
     {
         $fields = $request->validate([
-            'pet_id' => 'required|integer|exists:pets,pet_id',
+            'pet_id' => 'required|integer|exists:thu_cung,pet_id',
             'payment_method' => 'required|in:TIEN_MAT,CHUYEN_KHOAN,THE',
             'items' => 'required|array|min:1',
-            'items.*.item_id' => 'required|integer|exists:inventory,item_id',
+            'items.*.item_id' => 'required|integer|exists:kho_hang,item_id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
         try {
             return DB::transaction(function () use ($fields) {
-                $pet = DB::table('pets')->where('pet_id', $fields['pet_id'])->lockForUpdate()->first();
+                $pet = DB::table('thu_cung')->where('pet_id', $fields['pet_id'])->lockForUpdate()->first();
                 if (!$pet || !$pet->owner_id) {
                     return response()->json(['status' => 'error', 'message' => 'Thú cưng phải có hồ sơ chủ nuôi hợp lệ.'], 422);
                 }
@@ -111,7 +111,7 @@ class ThanhToanController extends Controller
                 $cartLines = [];
                 $total = 0;
                 foreach ($fields['items'] as $line) {
-                    $item = DB::table('inventory')->where('item_id', $line['item_id'])->lockForUpdate()->first();
+                    $item = DB::table('kho_hang')->where('item_id', $line['item_id'])->lockForUpdate()->first();
                     if (!$item || !in_array($item->danhmuc, ['THUC_AN', 'DO_DUNG', 'DICH_VU_SPA'], true)) {
                         throw new Exception('POS chỉ bán thức ăn, đồ dùng và dịch vụ Spa.');
                     }
@@ -122,9 +122,9 @@ class ThanhToanController extends Controller
                         if ((int) $item->soluongton < $quantity) {
                             throw new Exception('Không đủ tồn kho đồ dùng "' . $item->ten_sanpham . '". Còn ' . (int) $item->soluongton . '.');
                         }
-                        DB::table('inventory')->where('item_id', $item->item_id)->decrement('soluongton', $quantity);
+                        DB::table('kho_hang')->where('item_id', $item->item_id)->decrement('soluongton', $quantity);
                     } elseif ($item->danhmuc === 'THUC_AN') {
-                        $batches = DB::table('inventory_batches')
+                        $batches = DB::table('lo_hang')
                             ->where('item_id', $item->item_id)
                             ->where('trangthai', 'DANG_SU_DUNG')
                             ->where('soluong', '>', 0)
@@ -139,7 +139,7 @@ class ThanhToanController extends Controller
                         foreach ($batches as $batch) {
                             if ($remaining <= 0) break;
                             $take = min((int) $batch->soluong, $remaining);
-                            DB::table('inventory_batches')->where('batch_id', $batch->batch_id)->decrement('soluong', $take);
+                            DB::table('lo_hang')->where('batch_id', $batch->batch_id)->decrement('soluong', $take);
                             $remaining -= $take;
                         }
                         if ($remaining > 0) {
@@ -159,7 +159,7 @@ class ThanhToanController extends Controller
                     ];
                 }
 
-                $invoiceId = DB::table('invoices')->insertGetId([
+                $invoiceId = DB::table('hoa_don')->insertGetId([
                     'mahoadon' => 'TMP' . uniqid(),
                     'pet_id' => $pet->pet_id,
                     'owner_id' => $pet->owner_id,
@@ -169,10 +169,10 @@ class ThanhToanController extends Controller
                     'ngaytao' => now(),
                 ]);
                 $code = sprintf('HD%05d', $invoiceId);
-                DB::table('invoices')->where('invoice_id', $invoiceId)->update(['mahoadon' => $code]);
+                DB::table('hoa_don')->where('invoice_id', $invoiceId)->update(['mahoadon' => $code]);
 
                 foreach ($cartLines as $line) {
-                    DB::table('invoice_details')->insert([
+                    DB::table('chi_tiet_hoa_don')->insert([
                         'invoice_id' => $invoiceId,
                         'prescription_id' => null,
                         'loai_chiphi' => $line['category'],
@@ -204,44 +204,44 @@ class ThanhToanController extends Controller
      */
     public function eligiblePets()
     {
-        $pets = DB::table('pets as p')
-            ->join('owners as o', 'o.owner_id', '=', 'p.owner_id')
+        $thu_cung = DB::table('thu_cung as p')
+            ->join('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
             ->whereNotIn('p.trangthai', ['DA_XUAT_VIEN', 'CHUYEN_VIEN'])
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
-                    ->from('medical_queue as mq')
+                    ->from('hang_doi_kham as mq')
                     ->whereColumn('mq.pet_id', 'p.pet_id')
                     ->whereIn('mq.trangthai', ['CHO_KHAM', 'DANG_KHAM']);
             })
             // Không hiển thị thú đã được bác sĩ chỉ định lưu trú nhưng nhân viên chưa xác nhận xếp lồng.
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
-                    ->from('boarding_requests as br')
+                    ->from('yeu_cau_luu_tru as br')
                     ->whereColumn('br.pet_id', 'p.pet_id')
                     ->where('br.status', 'pending');
             })
             ->where(function ($query) {
                 $query->whereExists(function ($sub) {
                     $sub->select(DB::raw(1))
-                        ->from('medical_records as mr')
+                        ->from('phieu_kham as mr')
                         ->whereColumn('mr.pet_id', 'p.pet_id')
                         ->whereNull('mr.invoice_id')
                         ->where('mr.trangthai', '!=', 'CHUYEN_VIEN');
                 })->orWhereExists(function ($sub) {
                     $sub->select(DB::raw(1))
-                        ->from('prescriptions as rx')
-                        ->join('medical_records as mr', 'mr.record_id', '=', 'rx.record_id')
+                        ->from('don_thuoc as rx')
+                        ->join('phieu_kham as mr', 'mr.record_id', '=', 'rx.record_id')
                         ->whereColumn('mr.pet_id', 'p.pet_id')
                         ->whereNull('rx.invoice_id');
                 })->orWhereExists(function ($sub) {
                     $sub->select(DB::raw(1))
-                        ->from('pet_boardings as pb')
+                        ->from('luot_luu_tru as pb')
                         ->whereColumn('pb.pet_id', 'p.pet_id')
                         ->whereNull('pb.invoice_id')
                         ->whereNotNull('pb.check_in');
                 })->orWhereExists(function ($sub) {
                     $sub->select(DB::raw(1))
-                        ->from('spa_usages as su')
+                        ->from('luot_dich_vu_spa as su')
                         ->whereColumn('su.pet_id', 'p.pet_id')
                         ->whereNull('su.invoice_id');
                 });
@@ -265,21 +265,21 @@ class ThanhToanController extends Controller
                 ],
             ]);
 
-        return response()->json(['status' => 'success', 'data' => $pets]);
+        return response()->json(['status' => 'success', 'data' => $thu_cung]);
     }
 
     /** Danh sách các phiếu khám ngoại trú chưa lập hóa đơn. */
     public function pendingVisits()
     {
-        $visits = DB::table('medical_records as mr')
-            ->join('pets as p', 'p.pet_id', '=', 'mr.pet_id')
-            ->leftJoin('owners as o', 'o.owner_id', '=', 'p.owner_id')
+        $visits = DB::table('phieu_kham as mr')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'mr.pet_id')
+            ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
             ->whereNull('mr.invoice_id')
             ->whereIn('mr.trangthai', ['CHUA_KHAM', 'DANG_DIEU_TRI'])
             ->where('p.trangthai', '!=', 'NOI_TRU')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
-                    ->from('medical_queue as mq')
+                    ->from('hang_doi_kham as mq')
                     ->whereColumn('mq.pet_id', 'mr.pet_id')
                     ->whereIn('mq.trangthai', ['CHO_KHAM', 'DANG_KHAM']);
             })
@@ -293,23 +293,23 @@ class ThanhToanController extends Controller
     public function createVisitInvoice(Request $request)
     {
         $fields = $request->validate([
-            'record_id' => 'required|integer|exists:medical_records,record_id',
+            'record_id' => 'required|integer|exists:phieu_kham,record_id',
             'payment_method' => 'required|in:TIEN_MAT,CHUYEN_KHOAN,THE',
         ]);
 
         return DB::transaction(function () use ($fields) {
-            $record = DB::table('medical_records')->where('record_id', $fields['record_id'])->lockForUpdate()->first();
+            $record = DB::table('phieu_kham')->where('record_id', $fields['record_id'])->lockForUpdate()->first();
             if (!$record || $record->invoice_id) {
                 return response()->json(['status' => 'error', 'message' => 'Phiếu khám này đã được thanh toán hoặc không còn tồn tại.'], 422);
             }
             if (!in_array($record->trangthai, ['CHUA_KHAM', 'DANG_DIEU_TRI'], true)) {
                 return response()->json(['status' => 'error', 'message' => 'Phiếu khám không ở trạng thái có thể thanh toán.'], 422);
             }
-            $pet = DB::table('pets')->where('pet_id', $record->pet_id)->lockForUpdate()->first();
+            $pet = DB::table('thu_cung')->where('pet_id', $record->pet_id)->lockForUpdate()->first();
             if (!$pet || $pet->trangthai === 'NOI_TRU') {
                 return response()->json(['status' => 'error', 'message' => 'Thú cưng đang nội trú phải thanh toán tại mục xuất viện.'], 422);
             }
-            $activeQueue = DB::table('medical_queue')
+            $activeQueue = DB::table('hang_doi_kham')
                 ->where('pet_id', $pet->pet_id)
                 ->whereIn('trangthai', ['CHO_KHAM', 'DANG_KHAM'])
                 ->lockForUpdate()
@@ -317,22 +317,22 @@ class ThanhToanController extends Controller
             if ($activeQueue) {
                 return response()->json(['status' => 'error', 'message' => 'Thú cưng đang Chờ khám hoặc Đang khám. Chỉ được thanh toán sau khi bác sĩ hoàn tất lượt khám.'], 422);
             }
-            $items = DB::table('prescriptions as rx')
-                ->join('inventory as i', 'i.item_id', '=', 'rx.item_id')
+            $items = DB::table('don_thuoc as rx')
+                ->join('kho_hang as i', 'i.item_id', '=', 'rx.item_id')
                 ->where('rx.record_id', $record->record_id)
                 ->whereNull('rx.invoice_id')
                 ->select('rx.prescription_id', 'rx.soluong', 'i.danhmuc', 'i.ten_sanpham', 'i.donvitinh', 'i.dongia')
                 ->lockForUpdate()->get();
             $examFee = 50000;
             $medicineTotal = $items->sum(fn ($item) => (float) $item->soluong * (float) $item->dongia);
-            $invoiceId = DB::table('invoices')->insertGetId([
+            $invoiceId = DB::table('hoa_don')->insertGetId([
                 'mahoadon' => 'TMP' . uniqid(), 'pet_id' => $pet->pet_id, 'owner_id' => $pet->owner_id,
                 'tongtien' => $examFee + $medicineTotal, 'phuongthucthanhtoan' => $fields['payment_method'],
                 'trangthai' => 'DA_THANH_TOAN', 'ngaytao' => now(),
             ]);
             $code = sprintf('HD%05d', $invoiceId);
-            DB::table('invoices')->where('invoice_id', $invoiceId)->update(['mahoadon' => $code]);
-            DB::table('invoice_details')->insert([
+            DB::table('hoa_don')->where('invoice_id', $invoiceId)->update(['mahoadon' => $code]);
+            DB::table('chi_tiet_hoa_don')->insert([
                 'invoice_id' => $invoiceId, 'prescription_id' => null, 'loai_chiphi' => 'PHI_KHAM',
                 'ten_sanpham' => 'Phí khám bệnh - Phiếu #' . $record->record_id, 'donvitinh' => 'lần',
                 'soluong' => 1, 'dongia' => $examFee, 'thanhtien' => $examFee,
@@ -340,7 +340,7 @@ class ThanhToanController extends Controller
                 'created_at' => now(), 'updated_at' => now(),
             ]);
             foreach ($items as $item) {
-                DB::table('invoice_details')->insert([
+                DB::table('chi_tiet_hoa_don')->insert([
                     'invoice_id' => $invoiceId, 'prescription_id' => $item->prescription_id,
                     'loai_chiphi' => $item->danhmuc === 'VAC_XIN' ? 'VAC_XIN' : 'THUOC',
                     'ten_sanpham' => $item->ten_sanpham, 'donvitinh' => $item->donvitinh,
@@ -350,9 +350,9 @@ class ThanhToanController extends Controller
                 ]);
             }
             if ($items->isNotEmpty()) {
-                DB::table('prescriptions')->whereIn('prescription_id', $items->pluck('prescription_id'))->update(['invoice_id' => $invoiceId]);
+                DB::table('don_thuoc')->whereIn('prescription_id', $items->pluck('prescription_id'))->update(['invoice_id' => $invoiceId]);
             }
-            DB::table('medical_records')->where('record_id', $record->record_id)->update(['invoice_id' => $invoiceId, 'trangthai' => 'HOAN_THANH']);
+            DB::table('phieu_kham')->where('record_id', $record->record_id)->update(['invoice_id' => $invoiceId, 'trangthai' => 'HOAN_THANH']);
             return response()->json(['status' => 'success', 'message' => 'Đã thanh toán lượt khám ngoại trú.', 'data' => [
                 'invoice_id' => $invoiceId, 'mahoadon' => $code, 'tien_kham' => $examFee,
                 'tien_thuoc' => $medicineTotal, 'tong_thanhtoan' => $examFee + $medicineTotal,
@@ -365,13 +365,13 @@ class ThanhToanController extends Controller
     public function createInvoiceAndCheckout(Request $request)
     {
         $request->validate([
-            'pet_id'         => 'required|integer|exists:pets,pet_id',
+            'pet_id'         => 'required|integer|exists:thu_cung,pet_id',
             'payment_method' => 'required|in:TIEN_MAT,CHUYEN_KHOAN,THE',
         ]);
 
         try {
             return DB::transaction(function () use ($request) {
-                $pet = DB::table('pets')->where('pet_id', $request->pet_id)->lockForUpdate()->first();
+                $pet = DB::table('thu_cung')->where('pet_id', $request->pet_id)->lockForUpdate()->first();
 
                 // 1. Kiểm tra trạng thái hiện tại của thú cưng
                 if ($pet->trangthai === 'DA_XUAT_VIEN') {
@@ -396,7 +396,7 @@ class ThanhToanController extends Controller
                 }
 
                 // 2. Kiểm tra hồ sơ khám gần nhất
-                $latestRecord = DB::table('medical_records')
+                $latestRecord = DB::table('phieu_kham')
                     ->where('pet_id', $pet->pet_id)
                     ->orderByDesc('ngaykham')
                     ->orderByDesc('record_id')
@@ -428,7 +428,7 @@ class ThanhToanController extends Controller
                     ], 422);
                 }
 
-                $activeBoarding = DB::table('pet_boardings')
+                $activeBoarding = DB::table('luot_luu_tru')
                     ->where('pet_id', $pet->pet_id)
                     ->where('cage_id', $pet->cage_id)
                     ->where('status', 'checked_in')
@@ -444,7 +444,7 @@ class ThanhToanController extends Controller
                 }
 
                 // Khóa lồng để tránh nhiều yêu cầu cùng trả một lồng
-                $cage = DB::table('cages')
+                $cage = DB::table('long_nuoi')
                     ->where('cage_id', $pet->cage_id)
                     ->lockForUpdate()
                     ->first();
@@ -464,9 +464,9 @@ class ThanhToanController extends Controller
                 }
 
                 // 2. Gom chi phí các đơn thuốc chưa thanh toán
-                $lines = DB::table('prescriptions as rx')
-                    ->join('medical_records as mr', 'mr.record_id', '=', 'rx.record_id')
-                    ->join('inventory as i', 'i.item_id', '=', 'rx.item_id')
+                $lines = DB::table('don_thuoc as rx')
+                    ->join('phieu_kham as mr', 'mr.record_id', '=', 'rx.record_id')
+                    ->join('kho_hang as i', 'i.item_id', '=', 'rx.item_id')
                     ->where('mr.pet_id', $pet->pet_id)
                     ->whereNull('rx.invoice_id')
                     ->select(
@@ -487,7 +487,7 @@ class ThanhToanController extends Controller
 
 
                 // 3. Lấy các dịch vụ Spa đã ghi nhận nhưng chưa đưa vào hóa đơn
-                $spaLines = DB::table('spa_usages')
+                $spaLines = DB::table('luot_dich_vu_spa')
                     ->where('pet_id', $pet->pet_id)
                     ->whereNull('invoice_id')
                     ->lockForUpdate()
@@ -511,8 +511,8 @@ class ThanhToanController extends Controller
 
 
                                 // Phí khám cố định 50.000 đồng cho mỗi phiếu khám chưa lập hóa đơn.
-                $unbilledRecords = DB::table('medical_records as mr')
-                    ->leftJoin('surgeries as s', 's.surgery_id', '=', 'mr.surgery_id')
+                $unbilledRecords = DB::table('phieu_kham as mr')
+                    ->leftJoin('danh_muc_phau_thuat as s', 's.surgery_id', '=', 'mr.surgery_id')
                     ->where('mr.pet_id', $pet->pet_id)
                     ->whereNull('mr.invoice_id')
                     ->select('mr.*', 's.ma_phauthuat', 's.ten_phauthuat')
@@ -532,7 +532,7 @@ class ThanhToanController extends Controller
                 }
 
                 // 4. Tạo Hóa đơn
-                $invoiceId = DB::table('invoices')->insertGetId([
+                $invoiceId = DB::table('hoa_don')->insertGetId([
                     'mahoadon'            => 'TMP' . uniqid(),
                     'pet_id'              => $pet->pet_id,
                     'owner_id'            => $pet->owner_id,
@@ -544,7 +544,7 @@ class ThanhToanController extends Controller
                 
                 $code = sprintf('HD%05d', $invoiceId);
 
-                DB::table('invoices')
+                DB::table('hoa_don')
                     ->where('invoice_id', $invoiceId)
                     ->update([
                         'mahoadon' => $code
@@ -553,7 +553,7 @@ class ThanhToanController extends Controller
                 // 5. Lưu chi tiết hóa đơn và đánh dấu đơn thuốc đã thanh toán
                 if ($lines->isNotEmpty()) {
                     foreach ($lines as $line) {
-                        DB::table('invoice_details')->insert([
+                        DB::table('chi_tiet_hoa_don')->insert([
                             'invoice_id'      => $invoiceId,
                             'prescription_id' => $line->prescription_id,
                             'loai_chiphi'     => $line->danhmuc === 'VAC_XIN' ? 'VAC_XIN' : 'THUOC',
@@ -569,7 +569,7 @@ class ThanhToanController extends Controller
                     }
 
                     // Đánh dấu các đơn thuốc đã được lập hóa đơn
-                    DB::table('prescriptions')
+                    DB::table('don_thuoc')
                         ->whereIn(
                             'prescription_id',
                             $lines->pluck('prescription_id')
@@ -581,7 +581,7 @@ class ThanhToanController extends Controller
 
                 // Lưu riêng phí khám cho từng lần khám.
                 foreach ($unbilledRecords as $examRecord) {
-                    DB::table('invoice_details')->insert([
+                    DB::table('chi_tiet_hoa_don')->insert([
                         'invoice_id' => $invoiceId, 'prescription_id' => null, 'loai_chiphi' => 'PHI_KHAM',
                         'ten_sanpham' => 'Phí khám bệnh - Phiếu #' . $examRecord->record_id,
                         'donvitinh' => 'lần', 'soluong' => 1, 'dongia' => $examFeePerVisit,
@@ -593,7 +593,7 @@ class ThanhToanController extends Controller
                 if ($unbilledRecords->isNotEmpty()) {
                     foreach ($unbilledRecords as $examRecord) {
                         if ((float) ($examRecord->surgery_price ?? 0) > 0) {
-                            DB::table('invoice_details')->insert([
+                            DB::table('chi_tiet_hoa_don')->insert([
                                 'invoice_id' => $invoiceId, 'prescription_id' => null, 'loai_chiphi' => 'PHAU_THUAT',
                                 'ten_sanpham' => 'Phẫu thuật: ' . ($examRecord->ten_phauthuat ?: $examRecord->ma_phauthuat ?: 'Theo chỉ định'),
                                 'donvitinh' => 'ca', 'soluong' => 1, 'dongia' => $examRecord->surgery_price,
@@ -603,11 +603,11 @@ class ThanhToanController extends Controller
                             ]);
                         }
                     }
-                    DB::table('medical_records')->whereIn('record_id', $unbilledRecords->pluck('record_id'))->update(['invoice_id' => $invoiceId, 'trangthai' => 'HOAN_THANH']);
+                    DB::table('phieu_kham')->whereIn('record_id', $unbilledRecords->pluck('record_id'))->update(['invoice_id' => $invoiceId, 'trangthai' => 'HOAN_THANH']);
                 }
                 // 6. Lưu chi tiết phí lưu trú
                 if ($totalBoarding > 0) {
-                    DB::table('invoice_details')->insert([
+                    DB::table('chi_tiet_hoa_don')->insert([
                         'invoice_id'      => $invoiceId,
                         'prescription_id' => null,
                         'loai_chiphi'     => 'LUU_TRU',
@@ -628,7 +628,7 @@ class ThanhToanController extends Controller
                 // 7. Lưu chi tiết dịch vụ Spa và đánh dấu đã lập hóa đơn
                 if ($spaLines->isNotEmpty()) {
                     foreach ($spaLines as $spaLine) {
-                        DB::table('invoice_details')->insert([
+                        DB::table('chi_tiet_hoa_don')->insert([
                             'invoice_id'      => $invoiceId,
                             'prescription_id' => null,
                             'loai_chiphi'     => 'DICH_VU_SPA',
@@ -643,14 +643,14 @@ class ThanhToanController extends Controller
                         ]);
                     }
 
-                    DB::table('spa_usages')
+                    DB::table('luot_dich_vu_spa')
                         ->whereIn('spa_usage_id', $spaLines->pluck('spa_usage_id'))
                         ->whereNull('invoice_id')
                         ->update(['invoice_id' => $invoiceId, 'updated_at' => now()]);
                 }
 
                 // 8. Trả lồng và cập nhật trạng thái
-                DB::table('pet_boardings')
+                DB::table('luot_luu_tru')
                     ->where('id', $activeBoarding->id)
                     ->whereNull('check_out')
                     ->update([
@@ -660,7 +660,7 @@ class ThanhToanController extends Controller
                     ]);
 
                 // Đóng yêu cầu lưu trú tương ứng sau khi hoàn tất thanh toán và xuất viện.
-                DB::table('boarding_requests')
+                DB::table('yeu_cau_luu_tru')
                     ->where('pet_id', $pet->pet_id)
                     ->where('status', 'checked_in')
                     ->update([
@@ -669,7 +669,7 @@ class ThanhToanController extends Controller
                     ]);
 
                 // 7. Cập nhật trạng thái thú cưng trước, sau đó đồng bộ lồng
-                DB::table('pets')->where('pet_id', $pet->pet_id)->update([
+                DB::table('thu_cung')->where('pet_id', $pet->pet_id)->update([
                     'cage_id'   => null,
                     'trangthai' => 'DA_XUAT_VIEN'
                 ]);
@@ -703,15 +703,15 @@ class ThanhToanController extends Controller
     /** Xem trước các khoản phải trả theo hồ sơ thú cưng, chưa tạo hóa đơn. */
     public function previewPetCharges(int $petId)
     {
-        $pet = DB::table('pets as p')
-            ->leftJoin('owners as o', 'o.owner_id', '=', 'p.owner_id')
-            ->leftJoin('cages as c', 'c.cage_id', '=', 'p.cage_id')
+        $pet = DB::table('thu_cung as p')
+            ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
+            ->leftJoin('long_nuoi as c', 'c.cage_id', '=', 'p.cage_id')
             ->where('p.pet_id', $petId)
             ->select('p.*', 'o.ho_ten as ten_chu_nuoi', 'o.phone', 'c.malong', 'c.ten_long', 'c.loailong')
             ->first();
         abort_if(!$pet, 404, 'Không tìm thấy hồ sơ thú cưng.');
 
-        $activeQueue = DB::table('medical_queue')
+        $activeQueue = DB::table('hang_doi_kham')
             ->where('pet_id', $petId)
             ->whereIn('trangthai', ['CHO_KHAM', 'DANG_KHAM'])
             ->exists();
@@ -719,15 +719,15 @@ class ThanhToanController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Thú cưng đang Chờ khám hoặc Đang khám. Vui lòng hoàn tất lượt khám trước khi thanh toán.'], 422);
         }
 
-        $records = DB::table('medical_records as mr')
-            ->leftJoin('surgeries as s', 's.surgery_id', '=', 'mr.surgery_id')
+        $records = DB::table('phieu_kham as mr')
+            ->leftJoin('danh_muc_phau_thuat as s', 's.surgery_id', '=', 'mr.surgery_id')
             ->where('mr.pet_id', $petId)->whereNull('mr.invoice_id')
             ->orderBy('mr.ngaykham')
             ->select('mr.*', 's.ma_phauthuat', 's.ten_phauthuat')
             ->get();
-        $prescriptions = DB::table('prescriptions as rx')
-            ->join('medical_records as mr', 'mr.record_id', '=', 'rx.record_id')
-            ->join('inventory as i', 'i.item_id', '=', 'rx.item_id')
+        $don_thuoc = DB::table('don_thuoc as rx')
+            ->join('phieu_kham as mr', 'mr.record_id', '=', 'rx.record_id')
+            ->join('kho_hang as i', 'i.item_id', '=', 'rx.item_id')
             ->where('mr.pet_id', $petId)->whereNull('rx.invoice_id')
             ->select('rx.prescription_id', 'rx.soluong', 'i.ten_sanpham', 'i.donvitinh', 'i.dongia', 'i.danhmuc')
             ->get();
@@ -738,12 +738,12 @@ class ThanhToanController extends Controller
         $examCount = $billableRecords->count();
         $examFee = $examCount * 50000;
         $surgeryTotal = $billableRecords->sum(fn($r) => (float)($r->surgery_price ?? 0));
-        $medicineTotal = $prescriptions->sum(fn($r) => (float)$r->soluong * (float)$r->dongia);
+        $medicineTotal = $don_thuoc->sum(fn($r) => (float)$r->soluong * (float)$r->dongia);
 
         // Tính toàn bộ các lượt lưu trú, bao gồm cả lồng cũ đã chuyển đi.
         // Mỗi lượt được tính riêng theo loại lồng tại thời điểm lưu trú.
-        $boardingRows = DB::table('pet_boardings as pb')
-            ->leftJoin('cages as c', 'c.cage_id', '=', 'pb.cage_id')
+        $boardingRows = DB::table('luot_luu_tru as pb')
+            ->leftJoin('long_nuoi as c', 'c.cage_id', '=', 'pb.cage_id')
             ->where('pb.pet_id', $petId)
             ->whereNull('pb.invoice_id')
             ->whereNotNull('pb.check_in')
@@ -775,7 +775,7 @@ class ThanhToanController extends Controller
         })->values();
         $boardingTotal = $boardings->sum('total');
 
-        $catalog = DB::table('inventory')
+        $catalog = DB::table('kho_hang')
             ->whereIn('danhmuc', ['DICH_VU_SPA', 'THUC_AN', 'DO_DUNG'])
             ->orderBy('danhmuc')->orderBy('ten_sanpham')
             ->get(['item_id', 'masanpham', 'ten_sanpham', 'danhmuc', 'donvitinh', 'dongia', 'soluongton']);
@@ -787,8 +787,8 @@ class ThanhToanController extends Controller
                 'exam_count' => $examCount, 'exam_total' => $examFee,
                 'medicine_total' => $medicineTotal, 'surgery_total' => $surgeryTotal,
                 'boardings' => $boardings, 'boarding_total' => $boardingTotal,
-                'prescriptions' => $prescriptions,
-                'surgeries' => $billableRecords->filter(fn($r) => (float)($r->surgery_price ?? 0) > 0)->map(fn($r) => [
+                'don_thuoc' => $don_thuoc,
+                'danh_muc_phau_thuat' => $billableRecords->filter(fn($r) => (float)($r->surgery_price ?? 0) > 0)->map(fn($r) => [
                     'name' => 'Phẫu thuật: ' . (trim(($r->ma_phauthuat ? $r->ma_phauthuat . ' - ' : '') . ($r->ten_phauthuat ?? '')) ?: 'Theo chỉ định bác sĩ'),
                     'price' => (float)$r->surgery_price
                 ])->values(),
@@ -801,23 +801,23 @@ class ThanhToanController extends Controller
     public function createUnifiedInvoice(Request $request)
     {
         $fields = $request->validate([
-            'pet_id' => 'required|integer|exists:pets,pet_id',
+            'pet_id' => 'required|integer|exists:thu_cung,pet_id',
             'payment_method' => 'required|in:TIEN_MAT,CHUYEN_KHOAN,THE',
             'items' => 'nullable|array',
-            'items.*.item_id' => 'required|integer|exists:inventory,item_id',
+            'items.*.item_id' => 'required|integer|exists:kho_hang,item_id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
         try {
             return DB::transaction(function () use ($fields) {
-                $pet = DB::table('pets')->where('pet_id', $fields['pet_id'])->lockForUpdate()->first();
+                $pet = DB::table('thu_cung')->where('pet_id', $fields['pet_id'])->lockForUpdate()->first();
                 if (!$pet || !$pet->owner_id) {
                     throw new Exception('Hồ sơ thú cưng chưa có chủ nuôi hợp lệ.');
                 }
                 if (in_array($pet->trangthai, ['DA_XUAT_VIEN', 'CHUYEN_VIEN'], true)) {
                     throw new Exception('Thú cưng đã xuất viện hoặc chuyển viện, không thể lập hóa đơn điều trị mới.');
                 }
-                $activeQueue = DB::table('medical_queue')
+                $activeQueue = DB::table('hang_doi_kham')
                     ->where('pet_id', $pet->pet_id)
                     ->whereIn('trangthai', ['CHO_KHAM', 'DANG_KHAM'])
                     ->lockForUpdate()
@@ -826,8 +826,8 @@ class ThanhToanController extends Controller
                     throw new Exception('Thú cưng đang Chờ khám hoặc Đang khám. Chỉ được thanh toán sau khi bác sĩ hoàn tất lượt khám.');
                 }
 
-                $records = DB::table('medical_records as mr')
-                    ->leftJoin('surgeries as s', 's.surgery_id', '=', 'mr.surgery_id')
+                $records = DB::table('phieu_kham as mr')
+                    ->leftJoin('danh_muc_phau_thuat as s', 's.surgery_id', '=', 'mr.surgery_id')
                     ->where('mr.pet_id', $pet->pet_id)
                     ->whereNull('mr.invoice_id')
                     ->orderBy('mr.ngaykham')
@@ -838,9 +838,9 @@ class ThanhToanController extends Controller
                 // phiếu chuyển viện không được tự chuyển thành hoàn thành tại phòng khám này.
                 $records = $records->reject(fn($r) => $r->trangthai === 'CHUYEN_VIEN')->values();
 
-                $prescriptions = DB::table('prescriptions as rx')
-                    ->join('medical_records as mr', 'mr.record_id', '=', 'rx.record_id')
-                    ->join('inventory as i', 'i.item_id', '=', 'rx.item_id')
+                $don_thuoc = DB::table('don_thuoc as rx')
+                    ->join('phieu_kham as mr', 'mr.record_id', '=', 'rx.record_id')
+                    ->join('kho_hang as i', 'i.item_id', '=', 'rx.item_id')
                     ->where('mr.pet_id', $pet->pet_id)->whereNull('rx.invoice_id')
                     ->select('rx.prescription_id', 'rx.soluong', 'i.ten_sanpham', 'i.donvitinh', 'i.dongia', 'i.danhmuc')
                     ->lockForUpdate()->get();
@@ -853,12 +853,12 @@ class ThanhToanController extends Controller
                         $detailRows[] = ['type'=>'PHAU_THUAT','name'=>'Phẫu thuật: '.($surgeryLabel ?: 'Theo chỉ định bác sĩ'),'unit'=>'ca','qty'=>1,'price'=>(float)$record->surgery_price,'note'=>null];
                     }
                 }
-                foreach ($prescriptions as $line) {
+                foreach ($don_thuoc as $line) {
                     $detailRows[] = ['type'=>$line->danhmuc === 'VAC_XIN' ? 'VAC_XIN':'THUOC','name'=>$line->ten_sanpham,'unit'=>$line->donvitinh,'qty'=>(int)$line->soluong,'price'=>(float)$line->dongia,'note'=>null,'prescription_id'=>$line->prescription_id];
                 }
 
                 // Khóa và tính phí tất cả lượt lưu trú của thú cưng, không chỉ lồng hiện tại.
-                $boardingRows = DB::table('pet_boardings')
+                $boardingRows = DB::table('luot_luu_tru')
                     ->where('pet_id', $pet->pet_id)
                     ->whereNull('invoice_id')
                     ->whereNotNull('check_in')
@@ -871,7 +871,7 @@ class ThanhToanController extends Controller
                     $checkIn = Carbon::parse($stay->check_in);
                     $checkOut = $stay->check_out ? Carbon::parse($stay->check_out) : now();
                     $days = max(1, (int) $checkIn->copy()->startOfDay()->diffInDays($checkOut->copy()->startOfDay()) + 1);
-                    $stayCage = DB::table('cages')->where('cage_id', $stay->cage_id)->first();
+                    $stayCage = DB::table('long_nuoi')->where('cage_id', $stay->cage_id)->first();
                     $rate = $rateMap[$stayCage->loailong ?? ''] ?? 50000;
                     $detailRows[] = [
                         'type' => 'LUU_TRU',
@@ -887,7 +887,7 @@ class ThanhToanController extends Controller
                 }
                 $cage = null;
                 if ($activeBoarding) {
-                    $cage = DB::table('cages')->where('cage_id', $activeBoarding->cage_id)->lockForUpdate()->first();
+                    $cage = DB::table('long_nuoi')->where('cage_id', $activeBoarding->cage_id)->lockForUpdate()->first();
                 }
 
                 $submittedItemIds = array_column($fields['items'] ?? [], 'item_id');
@@ -896,16 +896,16 @@ class ThanhToanController extends Controller
                 }
 
                 foreach (($fields['items'] ?? []) as $line) {
-                    $item = DB::table('inventory')->where('item_id',$line['item_id'])->lockForUpdate()->first();
+                    $item = DB::table('kho_hang')->where('item_id',$line['item_id'])->lockForUpdate()->first();
                     if (!$item || !in_array($item->danhmuc,['DICH_VU_SPA','THUC_AN','DO_DUNG'],true)) {
                         throw new Exception('Chỉ được chọn dịch vụ, thức ăn hoặc đồ dùng ở bảng dịch vụ ngoài khám.');
                     }
                     // Mỗi dịch vụ/sản phẩm ngoài khám chỉ được tính một lần, không nhập số lượng.
                     if ($item->danhmuc === 'DO_DUNG') {
                         if ((int)$item->soluongton < $qty) throw new Exception('Không đủ tồn kho: '.$item->ten_sanpham);
-                        DB::table('inventory')->where('item_id',$item->item_id)->decrement('soluongton',$qty);
+                        DB::table('kho_hang')->where('item_id',$item->item_id)->decrement('soluongton',$qty);
                     } elseif ($item->danhmuc === 'THUC_AN') {
-                        $batches = DB::table('inventory_batches')->where('item_id',$item->item_id)
+                        $batches = DB::table('lo_hang')->where('item_id',$item->item_id)
                             ->where('trangthai','DANG_SU_DUNG')->where('soluong','>',0)
                             ->whereNotNull('ngayhethan')->whereDate('ngayhethan','>=',now()->toDateString())
                             ->orderBy('ngayhethan')->orderBy('batch_id')->lockForUpdate()->get();
@@ -913,7 +913,7 @@ class ThanhToanController extends Controller
                         foreach ($batches as $batch) {
                             if ($left <= 0) break;
                             $take = min((int)$batch->soluong,$left);
-                            DB::table('inventory_batches')->where('batch_id',$batch->batch_id)->decrement('soluong',$take);
+                            DB::table('lo_hang')->where('batch_id',$batch->batch_id)->decrement('soluong',$take);
                             $left -= $take;
                         }
                         if ($left > 0) throw new Exception('Không đủ tồn kho thức ăn còn hạn: '.$item->ten_sanpham);
@@ -924,16 +924,16 @@ class ThanhToanController extends Controller
                 $total = array_sum(array_map(fn($row)=>$row['qty']*$row['price'],$detailRows));
                 if ($total <= 0) throw new Exception('Không có khoản phải thu để lập hóa đơn.');
 
-                $invoiceId = DB::table('invoices')->insertGetId([
+                $invoiceId = DB::table('hoa_don')->insertGetId([
                     'mahoadon'=>'TMP'.uniqid(),'pet_id'=>$pet->pet_id,'owner_id'=>$pet->owner_id,
                     'tongtien'=>$total,'phuongthucthanhtoan'=>$fields['payment_method'],
                     'trangthai'=>'DA_THANH_TOAN','ngaytao'=>now()
                 ]);
                 $code = sprintf('HD%05d',$invoiceId);
-                DB::table('invoices')->where('invoice_id',$invoiceId)->update(['mahoadon'=>$code]);
+                DB::table('hoa_don')->where('invoice_id',$invoiceId)->update(['mahoadon'=>$code]);
 
                 foreach ($detailRows as $row) {
-                    DB::table('invoice_details')->insert([
+                    DB::table('chi_tiet_hoa_don')->insert([
                         'invoice_id'=>$invoiceId,'prescription_id'=>$row['prescription_id'] ?? null,
                         'loai_chiphi'=>$row['type'],'ten_sanpham'=>$row['name'],'donvitinh'=>$row['unit'],
                         'soluong'=>$row['qty'],'dongia'=>$row['price'],'thanhtien'=>$row['qty']*$row['price'],
@@ -941,24 +941,24 @@ class ThanhToanController extends Controller
                     ]);
                 }
                 if ($boardingRows->isNotEmpty()) {
-                    DB::table('pet_boardings')
+                    DB::table('luot_luu_tru')
                         ->whereIn('id', $boardingRows->pluck('id'))
                         ->whereNull('invoice_id')
                         ->update(['invoice_id' => $invoiceId, 'updated_at' => now()]);
                 }
 
-                if ($prescriptions->isNotEmpty()) DB::table('prescriptions')->whereIn('prescription_id',$prescriptions->pluck('prescription_id'))->update(['invoice_id'=>$invoiceId]);
+                if ($don_thuoc->isNotEmpty()) DB::table('don_thuoc')->whereIn('prescription_id',$don_thuoc->pluck('prescription_id'))->update(['invoice_id'=>$invoiceId]);
                 if ($records->isNotEmpty()) {
-                    DB::table('medical_records')->whereIn('record_id',$records->pluck('record_id'))->update([
+                    DB::table('phieu_kham')->whereIn('record_id',$records->pluck('record_id'))->update([
                         'trangthai' => 'HOAN_THANH',
                         'invoice_id' => $invoiceId,
                     ]);
                 }
 
                 if ($activeBoarding && $cage) {
-                    DB::table('pet_boardings')->where('id',$activeBoarding->id)->update(['check_out'=>now(),'status'=>'checked_out','updated_at'=>now()]);
-                    DB::table('boarding_requests')->where('pet_id',$pet->pet_id)->where('status','checked_in')->update(['status'=>'completed','updated_at'=>now()]);
-                    DB::table('pets')->where('pet_id',$pet->pet_id)->update(['cage_id'=>null,'trangthai'=>'DA_XUAT_VIEN']);
+                    DB::table('luot_luu_tru')->where('id',$activeBoarding->id)->update(['check_out'=>now(),'status'=>'checked_out','updated_at'=>now()]);
+                    DB::table('yeu_cau_luu_tru')->where('pet_id',$pet->pet_id)->where('status','checked_in')->update(['status'=>'completed','updated_at'=>now()]);
+                    DB::table('thu_cung')->where('pet_id',$pet->pet_id)->update(['cage_id'=>null,'trangthai'=>'DA_XUAT_VIEN']);
                     $this->cageOccupancy->sync((int)$cage->cage_id);
                 }
 

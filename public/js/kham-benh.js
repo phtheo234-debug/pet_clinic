@@ -208,7 +208,7 @@ function mapActionToStatus(huongXuLy) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     initPage();
-    await Promise.all([loadThuCungsDropdown(), loadMedicalRecords(), loadMedicalInventory(), loadMedicalVaccinationTypes()]);
+    await Promise.all([loadPetsDropdown(), loadMedicalRecords(), loadMedicalInventory(), loadMedicalVaccinationTypes()]);
     document.getElementById("pet_select")?.addEventListener("change", event => loadMedicalVaccinationHistory(Number(event.target.value || 0)));
     if (document.getElementById("medicalQueueBody")) {
         document.getElementById("btnSelectPriorityQueue")?.addEventListener("click", async event => {
@@ -441,7 +441,7 @@ function updateMedicalSections() {
     }
 }
 
-async function loadThuCungsDropdown() {
+async function loadPetsDropdown() {
     const select = document.getElementById("pet_select");
     const weightInput = document.getElementById("cannangkhi_kham");
     try {

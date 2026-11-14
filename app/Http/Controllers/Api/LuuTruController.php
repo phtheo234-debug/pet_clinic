@@ -20,9 +20,9 @@ class LuuTruController extends Controller
      */
     public function index()
     {
-        $cages = DB::table('cages')->orderBy('cage_id')->get();
+        $long_nuoi = DB::table('long_nuoi')->orderBy('cage_id')->get();
 
-        foreach ($cages as $cage) {
+        foreach ($long_nuoi as $cage) {
             $syncedCage = DB::transaction(function () use ($cage) {
                 return $this->cageOccupancy->sync((int) $cage->cage_id);
             });
@@ -31,7 +31,7 @@ class LuuTruController extends Controller
                 ? (int) $syncedCage->soluonghientai
                 : 0;
             $cage->trangthai = $syncedCage->trangthai ?? $cage->trangthai;
-            $cage->pets = DB::table('pets')
+            $cage->thu_cung = DB::table('thu_cung')
                 ->select('pet_id', 'mathucung', 'ten_thucung', 'loai', 'giong', 'trangthai')
                 ->where('cage_id', $cage->cage_id)
                 ->get();
@@ -40,7 +40,7 @@ class LuuTruController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $cages,
+            'data' => $long_nuoi,
         ]);
     }
 
@@ -50,9 +50,9 @@ class LuuTruController extends Controller
      */
     public function requests()
     {
-        $requests = DB::table('boarding_requests as br')
-            ->join('pets as p', 'p.pet_id', '=', 'br.pet_id')
-            ->join('medical_records as mr', 'mr.record_id', '=', 'br.medical_record_id')
+        $requests = DB::table('yeu_cau_luu_tru as br')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'br.pet_id')
+            ->join('phieu_kham as mr', 'mr.record_id', '=', 'br.medical_record_id')
             ->where('br.status', 'pending')
             ->select(
                 'br.request_id',
@@ -92,7 +92,7 @@ class LuuTruController extends Controller
     {
         try {
             return DB::transaction(function () use ($request, $id) {
-                $boardingRequest = DB::table('boarding_requests')
+                $boardingRequest = DB::table('yeu_cau_luu_tru')
                     ->where('request_id', $id)
                     ->lockForUpdate()
                     ->first();
@@ -111,7 +111,7 @@ class LuuTruController extends Controller
                     ], 409);
                 }
 
-                $pet = DB::table('pets')
+                $pet = DB::table('thu_cung')
                     ->where('pet_id', $boardingRequest->pet_id)
                     ->lockForUpdate()
                     ->first();
@@ -124,9 +124,9 @@ class LuuTruController extends Controller
                 }
 
                 $oldCageId = $pet->cage_id ? (int) $pet->cage_id : null;
-                $oldCage = $oldCageId ? DB::table('cages')->where('cage_id', $oldCageId)->first() : null;
-                $latestPetWeight = DB::table('weight_logs')->where('pet_id', $pet->pet_id)->orderByDesc('ngaydo')->value('cannang');
-                $examPetWeight = DB::table('medical_records')->where('record_id', $boardingRequest->medical_record_id)->value('cannangkhi_kham');
+                $oldCage = $oldCageId ? DB::table('long_nuoi')->where('cage_id', $oldCageId)->first() : null;
+                $latestPetWeight = DB::table('lich_su_can_nang')->where('pet_id', $pet->pet_id)->orderByDesc('ngaydo')->value('cannang');
+                $examPetWeight = DB::table('phieu_kham')->where('record_id', $boardingRequest->medical_record_id)->value('cannangkhi_kham');
                 $petWeight = (float) ($latestPetWeight ?? $examPetWeight ?? 0);
                 $oldCageCompatible = $oldCage
                     && $oldCage->loailong === $boardingRequest->loai_long_yeu_cau
@@ -137,7 +137,7 @@ class LuuTruController extends Controller
                     return response()->json(['status' => 'error', 'message' => 'Thú cưng đã ở đúng lồng phù hợp với chỉ định, loài và cân nặng.'], 409);
                 }
 
-                $activeBoarding = DB::table('pet_boardings')
+                $activeBoarding = DB::table('luot_luu_tru')
                     ->where('pet_id', $pet->pet_id)
                     ->where('status', 'checked_in')
                     ->whereNull('check_out')
@@ -171,14 +171,14 @@ class LuuTruController extends Controller
                 }
 
                 if ($oldCageId && $activeBoarding) {
-                    DB::table('pet_boardings')->where('id', $activeBoarding->id)->update([
+                    DB::table('luot_luu_tru')->where('id', $activeBoarding->id)->update([
                         'check_out' => now(),
                         'status' => 'checked_out',
                         'updated_at' => now(),
                     ]);
                 }
 
-                DB::table('pet_boardings')->insert([
+                DB::table('luot_luu_tru')->insert([
                     'pet_id' => $pet->pet_id,
                     'cage_id' => $cage->cage_id,
                     'check_in' => now(),
@@ -187,12 +187,12 @@ class LuuTruController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                DB::table('pets')->where('pet_id', $pet->pet_id)->update([
+                DB::table('thu_cung')->where('pet_id', $pet->pet_id)->update([
                     'cage_id' => $cage->cage_id,
                     'trangthai' => 'NOI_TRU',
                 ]);
 
-                DB::table('boarding_requests')
+                DB::table('yeu_cau_luu_tru')
                     ->where('request_id', $id)
                     ->update([
                         'status' => 'checked_in',
@@ -232,7 +232,7 @@ class LuuTruController extends Controller
      */
     private function findSuitableCage(object $boardingRequest, bool $lock, ?int $excludeCageId = null, ?int $specificCageId = null): ?object
     {
-        $pet = DB::table('pets')
+        $pet = DB::table('thu_cung')
             ->where('pet_id', $boardingRequest->pet_id)
             ->first();
 
@@ -240,20 +240,20 @@ class LuuTruController extends Controller
             return null;
         }
 
-        $latestWeight = DB::table('weight_logs')
+        $latestWeight = DB::table('lich_su_can_nang')
             ->where('pet_id', $pet->pet_id)
             ->orderByDesc('ngaydo')
             ->first();
 
         $examWeight = $boardingRequest->cannangkhi_kham
-            ?? DB::table('medical_records')->where('record_id', $boardingRequest->medical_record_id)->value('cannangkhi_kham');
+            ?? DB::table('phieu_kham')->where('record_id', $boardingRequest->medical_record_id)->value('cannangkhi_kham');
         $weight = $latestWeight
             ? (float) $latestWeight->cannang
             : (float) ($examWeight ?? 0);
 
-        $hasMaxWeightColumn = Schema::hasColumn('cages', 'tai_trong_toi_da');
+        $hasMaxWeightColumn = Schema::hasColumn('long_nuoi', 'tai_trong_toi_da');
 
-        $query = DB::table('cages')
+        $query = DB::table('long_nuoi')
             ->where('loailong', $boardingRequest->loai_long_yeu_cau)
             ->whereNotIn('trangthai', ['DANG_VE_SINH', 'BAO_TRI']);
         if ($excludeCageId) {
@@ -263,7 +263,7 @@ class LuuTruController extends Controller
             $query->where('cage_id', $specificCageId);
         }
 
-        if (Schema::hasColumn('cages', 'loai_ap_dung')) {
+        if (Schema::hasColumn('long_nuoi', 'loai_ap_dung')) {
             $query->whereRaw('LOWER(loai_ap_dung) = ?', [mb_strtolower((string) $pet->loai)]);
         }
 
@@ -275,13 +275,13 @@ class LuuTruController extends Controller
             $query->lockForUpdate();
         }
 
-        $cages = $query->orderBy('cage_id')->get();
+        $long_nuoi = $query->orderBy('cage_id')->get();
 
         $selectedCage = null;
         $selectedOccupancy = PHP_INT_MAX;
 
-        foreach ($cages as $cage) {
-            $occupantsQuery = DB::table('pets')->where('cage_id', $cage->cage_id);
+        foreach ($long_nuoi as $cage) {
+            $occupantsQuery = DB::table('thu_cung')->where('cage_id', $cage->cage_id);
 
             if ($lock) {
                 $occupantsQuery->lockForUpdate();

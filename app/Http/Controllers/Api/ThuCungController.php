@@ -12,37 +12,37 @@ class ThuCungController extends Controller
 {
     private function query()
     {
-        // Subquery lấy chỉ số cân nặng mới nhất từ weight_logs (BR-04)
-        $latestWeight = DB::table('weight_logs as wl1')
+        // Subquery lấy chỉ số cân nặng mới nhất từ lich_su_can_nang (BR-04)
+        $latestWeight = DB::table('lich_su_can_nang as wl1')
             ->select('wl1.pet_id', 'wl1.cannang')
-            ->whereRaw('wl1.id = (SELECT MAX(wl2.id) FROM weight_logs wl2 WHERE wl2.pet_id = wl1.pet_id)');
+            ->whereRaw('wl1.id = (SELECT MAX(wl2.id) FROM lich_su_can_nang wl2 WHERE wl2.pet_id = wl1.pet_id)');
 
-        $latestExam = DB::table('medical_records as mr1')->select('mr1.pet_id', 'mr1.record_id', 'mr1.trangthai as exam_status', 'mr1.ngaykham as exam_date', 'mr1.invoice_id as exam_invoice_id')->whereRaw('mr1.record_id = (SELECT MAX(mr2.record_id) FROM medical_records mr2 WHERE mr2.pet_id = mr1.pet_id)');
+        $latestExam = DB::table('phieu_kham as mr1')->select('mr1.pet_id', 'mr1.record_id', 'mr1.trangthai as exam_status', 'mr1.ngaykham as exam_date', 'mr1.invoice_id as exam_invoice_id')->whereRaw('mr1.record_id = (SELECT MAX(mr2.record_id) FROM phieu_kham mr2 WHERE mr2.pet_id = mr1.pet_id)');
 
-        $latestQueue = DB::table('medical_queue as mq1')
+        $latestQueue = DB::table('hang_doi_kham as mq1')
             ->select('mq1.pet_id', 'mq1.trangthai as queue_status', 'mq1.ghi_chu as queue_note')
-            ->whereRaw('mq1.queue_id = (SELECT MAX(mq2.queue_id) FROM medical_queue mq2 WHERE mq2.pet_id = mq1.pet_id)');
+            ->whereRaw('mq1.queue_id = (SELECT MAX(mq2.queue_id) FROM hang_doi_kham mq2 WHERE mq2.pet_id = mq1.pet_id)');
 
-        return DB::table('pets')
-            ->leftJoinSub($latestExam, 'latest_exam', function ($join) { $join->on('pets.pet_id', '=', 'latest_exam.pet_id'); })
-            ->leftJoinSub($latestQueue, 'latest_queue', function ($join) { $join->on('pets.pet_id', '=', 'latest_queue.pet_id'); })
-            ->leftJoin('owners', 'owners.owner_id', '=', 'pets.owner_id')
+        return DB::table('thu_cung')
+            ->leftJoinSub($latestExam, 'latest_exam', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_exam.pet_id'); })
+            ->leftJoinSub($latestQueue, 'latest_queue', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_queue.pet_id'); })
+            ->leftJoin('chu_nuoi', 'chu_nuoi.owner_id', '=', 'thu_cung.owner_id')
             ->leftJoinSub($latestWeight, 'latest_weight', function ($join) {
-                $join->on('pets.pet_id', '=', 'latest_weight.pet_id');
+                $join->on('thu_cung.pet_id', '=', 'latest_weight.pet_id');
             })
             ->select(
-                'pets.*',
-                'owners.ho_ten as owner_name',
-                'owners.phone as owner_phone',
-                'owners.diachi as owner_address',
-                'owners.email as owner_email',
+                'thu_cung.*',
+                'chu_nuoi.ho_ten as owner_name',
+                'chu_nuoi.phone as owner_phone',
+                'chu_nuoi.diachi as owner_address',
+                'chu_nuoi.email as owner_email',
                 'latest_weight.cannang as current_weight', 'latest_exam.record_id as record_id', 'latest_exam.exam_status as trangthai_kham', 'latest_exam.exam_date as ngaykham_gannhat', 'latest_exam.exam_invoice_id as mahoadon_kham', 'latest_queue.queue_status as queue_status', 'latest_queue.queue_note as queue_note'
             );
     }
 
     private function findOrFail($id)
     {
-        $pet = $this->query()->where('pets.pet_id', $id)->first();
+        $pet = $this->query()->where('thu_cung.pet_id', $id)->first();
         abort_if(!$pet, 404, 'Không tìm thấy thú cưng');
         return $pet;
     }
@@ -81,51 +81,51 @@ class ThuCungController extends Controller
     /** Cập nhật thông tin chủ nuôi. */
     public function updateOwner(Request $request, $id)
     {
-        $owner = DB::table('owners')->where('owner_id', $id)->first();
+        $owner = DB::table('chu_nuoi')->where('owner_id', $id)->first();
         abort_if(!$owner, 404, 'Không tìm thấy chủ nuôi.');
         $fields = $request->validate([
             'ho_ten' => 'required|string|max:100',
-            'phone' => 'required|string|max:20|unique:owners,phone,' . $id . ',owner_id',
+            'phone' => 'required|string|max:20|unique:chu_nuoi,phone,' . $id . ',owner_id',
             'diachi' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:100',
         ]);
-        DB::table('owners')->where('owner_id', $id)->update($fields);
+        DB::table('chu_nuoi')->where('owner_id', $id)->update($fields);
         return response()->json(['status' => 'success', 'message' => 'Cập nhật thông tin chủ nuôi thành công.']);
     }
 
     /** Chỉ xóa chủ nuôi khi không còn thú cưng liên kết. */
     public function destroyOwner($id)
     {
-        $owner = DB::table('owners')->where('owner_id', $id)->first();
+        $owner = DB::table('chu_nuoi')->where('owner_id', $id)->first();
         abort_if(!$owner, 404, 'Không tìm thấy chủ nuôi.');
-        if (DB::table('pets')->where('owner_id', $id)->exists()) {
+        if (DB::table('thu_cung')->where('owner_id', $id)->exists()) {
             return response()->json(['status' => 'error', 'message' => 'Không thể xóa chủ nuôi đang có hồ sơ thú cưng. Hãy chuyển hoặc xóa các hồ sơ liên quan trước.'], 409);
         }
-        DB::table('owners')->where('owner_id', $id)->delete();
+        DB::table('chu_nuoi')->where('owner_id', $id)->delete();
         return response()->json(['status' => 'success', 'message' => 'Đã xóa chủ nuôi thành công.']);
     }
     // Lấy danh sách chủ nuôi đổ vào Dropdown chọn Chủ nuôi ở Frontend
-    public function owners()
+    public function chu_nuoi()
     {
-        $owners = DB::table('owners')
-            ->leftJoin('pets', 'pets.owner_id', '=', 'owners.owner_id')
-            ->select('owners.owner_id', 'owners.ho_ten', 'owners.phone', 'owners.diachi', 'owners.email', DB::raw('COUNT(pets.pet_id) as pet_count'))
-            ->groupBy('owners.owner_id', 'owners.ho_ten', 'owners.phone', 'owners.diachi', 'owners.email')
-            ->orderByDesc('owners.owner_id')
+        $chu_nuoi = DB::table('chu_nuoi')
+            ->leftJoin('thu_cung', 'thu_cung.owner_id', '=', 'chu_nuoi.owner_id')
+            ->select('chu_nuoi.owner_id', 'chu_nuoi.ho_ten', 'chu_nuoi.phone', 'chu_nuoi.diachi', 'chu_nuoi.email', DB::raw('COUNT(thu_cung.pet_id) as pet_count'))
+            ->groupBy('chu_nuoi.owner_id', 'chu_nuoi.ho_ten', 'chu_nuoi.phone', 'chu_nuoi.diachi', 'chu_nuoi.email')
+            ->orderByDesc('chu_nuoi.owner_id')
             ->get();
 
         return response()->json([
             'status' => 'success',
-            'data'   => $owners
+            'data'   => $chu_nuoi
         ], 200);
     }
 
     public function index()
     {
-        $pets = $this->query()->orderByDesc('pets.pet_id')->get();
+        $thu_cung = $this->query()->orderByDesc('thu_cung.pet_id')->get();
         return response()->json([
             'status' => 'success',
-            'data'   => $pets->map(fn ($p) => $this->format($p))->values()
+            'data'   => $thu_cung->map(fn ($p) => $this->format($p))->values()
         ], 200);
     }
 
@@ -143,7 +143,7 @@ class ThuCungController extends Controller
         ];
 
         if ($hasOwnerId) {
-            $rules['owner_id'] = 'required|integer|min:1|exists:owners,owner_id';
+            $rules['owner_id'] = 'required|integer|min:1|exists:chu_nuoi,owner_id';
         } else {
             $rules['ho_ten'] = 'required|string|max:100';
             $rules['phone']  = 'required|string|max:20';
@@ -171,7 +171,7 @@ class ThuCungController extends Controller
                     $ownerId = $v['owner_id'];
                 } else {
                     $phone = trim($v['phone']);
-                    $existingOwner = DB::table('owners')->where('phone', $phone)->first();
+                    $existingOwner = DB::table('chu_nuoi')->where('phone', $phone)->first();
 
                     if ($existingOwner) {
                         $ownerId = $existingOwner->owner_id;
@@ -186,10 +186,10 @@ class ThuCungController extends Controller
                             $ownerUpdate['diachi'] = trim($v['diachi']);
                         }
                         if ($ownerUpdate) {
-                            DB::table('owners')->where('owner_id', $ownerId)->update($ownerUpdate);
+                            DB::table('chu_nuoi')->where('owner_id', $ownerId)->update($ownerUpdate);
                         }
                     } else {
-                        $ownerId = DB::table('owners')->insertGetId([
+                        $ownerId = DB::table('chu_nuoi')->insertGetId([
                             'ho_ten'  => trim($v['ho_ten']),
                             'phone'   => $phone,
                             'diachi'  => $v['diachi'] ?? null,
@@ -200,7 +200,7 @@ class ThuCungController extends Controller
                 }
 
                 // 2. Khởi tạo hồ sơ thú cưng
-                $id = DB::table('pets')->insertGetId([
+                $id = DB::table('thu_cung')->insertGetId([
                     'mathucung'   => 'TMP' . uniqid(),
                     'owner_id'    => $ownerId,
                     'ten_thucung' => $v['name'],
@@ -212,10 +212,10 @@ class ThuCungController extends Controller
                 ]);
 
                 // 3. Tạo mã định danh duy nhất TC0001 (BR-01)
-                DB::table('pets')->where('pet_id', $id)->update(['mathucung' => sprintf('TC%04d', $id)]);
+                DB::table('thu_cung')->where('pet_id', $id)->update(['mathucung' => sprintf('TC%04d', $id)]);
 
-                // 4. Ghi nhận cân nặng khởi tạo vào weight_logs (BR-04)
-                DB::table('weight_logs')->insert([
+                // 4. Ghi nhận cân nặng khởi tạo vào lich_su_can_nang (BR-04)
+                DB::table('lich_su_can_nang')->insert([
                     'pet_id'  => $id,
                     'cannang' => $v['weight'],
                     'ngaydo'  => now(),
@@ -241,9 +241,9 @@ class ThuCungController extends Controller
     {
         $pet = $this->findOrFail($id);
 
-        $medicalHistory = DB::table('medical_records as mr')
-            ->leftJoin('surgeries as s', 's.surgery_id', '=', 'mr.surgery_id')
-            ->leftJoin('invoices as i', 'i.invoice_id', '=', 'mr.invoice_id')
+        $medicalHistory = DB::table('phieu_kham as mr')
+            ->leftJoin('danh_muc_phau_thuat as s', 's.surgery_id', '=', 'mr.surgery_id')
+            ->leftJoin('hoa_don as i', 'i.invoice_id', '=', 'mr.invoice_id')
             ->where('mr.pet_id', $id)
             ->select('mr.record_id', 'mr.ngaykham', 'mr.chandoan', 'mr.huong_xuly', 'mr.trangthai', 'mr.invoice_id', 'i.mahoadon', 's.ten_phauthuat')
             ->orderByDesc('mr.ngaykham')->orderByDesc('mr.record_id')->get();
@@ -275,7 +275,7 @@ class ThuCungController extends Controller
         }
 
         $v = $request->validate([
-            'owner_id'       => 'sometimes|integer|min:1|exists:owners,owner_id',
+            'owner_id'       => 'sometimes|integer|min:1|exists:chu_nuoi,owner_id',
             'name'           => 'sometimes|string|max:50',
             'species'        => 'sometimes|string|max:30',
             'breed'          => 'sometimes|nullable|string|max:50',
@@ -303,12 +303,12 @@ class ThuCungController extends Controller
                 }
 
                 if ($data) {
-                    DB::table('pets')->where('pet_id', $id)->update($data);
+                    DB::table('thu_cung')->where('pet_id', $id)->update($data);
                 }
 
-                // Nếu có cập nhật cân nặng -> Thêm bản ghi mới vào weight_logs (BR-04)
+                // Nếu có cập nhật cân nặng -> Thêm bản ghi mới vào lich_su_can_nang (BR-04)
                 if (isset($v['weight'])) {
-                    DB::table('weight_logs')->insert([
+                    DB::table('lich_su_can_nang')->insert([
                         'pet_id'  => $id,
                         'cannang' => $v['weight'],
                         'ngaydo'  => now(),
@@ -343,7 +343,7 @@ class ThuCungController extends Controller
         }
 
         try {
-            DB::table('pets')->where('pet_id', $id)->delete();
+            DB::table('thu_cung')->where('pet_id', $id)->delete();
         } catch (QueryException $e) {
             return response()->json([
                 'status'  => 'error',

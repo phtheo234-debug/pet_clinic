@@ -3,17 +3,17 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\XacThucController;
-use App\Http\Controllers\Api\QuanLyNguoiDungController;
+use App\Http\Controllers\Api\QuanLyTaiKhoanController;
 use App\Http\Controllers\Api\QuanLyLongController;
 use App\Http\Controllers\Api\QuanLyKhoController;
 use App\Http\Controllers\Api\QuanLyDichVuSpaController;
-use App\Http\Controllers\Api\ThongKeController;
+use App\Http\Controllers\Api\TongQuanController;
 use App\Http\Controllers\Api\ThuCungController;
 use App\Http\Controllers\Api\LuuTruController;
 use App\Http\Controllers\Api\KhoController;
 use App\Http\Controllers\Api\KhamBenhController;
 use App\Http\Controllers\Api\ThanhToanController;
-use App\Http\Controllers\Api\SuDungSpaController;
+use App\Http\Controllers\Api\SuDungDichVuSpaController;
 use App\Http\Controllers\Api\PhauThuatController;
 use App\Http\Controllers\Api\TiemChungController;
 
@@ -41,13 +41,13 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
 
     // QUAN_TRI: quản lý tài khoản và danh mục hệ thống.
     Route::prefix('admin')->middleware('role:QUAN_TRI')->group(function () {
-        Route::get('/users', [QuanLyNguoiDungController::class, 'index']);
-        Route::get('/users/{id}', [QuanLyNguoiDungController::class, 'show']);
-        Route::post('/users', [QuanLyNguoiDungController::class, 'store']);
-        Route::put('/users/{id}', [QuanLyNguoiDungController::class, 'update']);
-        Route::delete('/users/{id}', [QuanLyNguoiDungController::class, 'destroy']);
-        Route::put('/users/{id}/reset-password', [QuanLyNguoiDungController::class, 'resetPassword']);
-        Route::put('/users/{id}/status', [QuanLyNguoiDungController::class, 'updateStatus']);
+        Route::get('/users', [QuanLyTaiKhoanController::class, 'index']);
+        Route::get('/users/{id}', [QuanLyTaiKhoanController::class, 'show']);
+        Route::post('/users', [QuanLyTaiKhoanController::class, 'store']);
+        Route::put('/users/{id}', [QuanLyTaiKhoanController::class, 'update']);
+        Route::delete('/users/{id}', [QuanLyTaiKhoanController::class, 'destroy']);
+        Route::put('/users/{id}/reset-password', [QuanLyTaiKhoanController::class, 'resetPassword']);
+        Route::put('/users/{id}/status', [QuanLyTaiKhoanController::class, 'updateStatus']);
 
         Route::post('/cages', [QuanLyLongController::class, 'store']);
         Route::put('/cages/{id}', [QuanLyLongController::class, 'update']);
@@ -78,8 +78,8 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
     Route::patch('/pets/{pet}', [ThuCungController::class, 'update'])->middleware('role:QUAN_TRI,BAC_SI,NHAN_VIEN');
     Route::delete('/pets/{pet}', [ThuCungController::class, 'destroy'])->middleware('role:QUAN_TRI,NHAN_VIEN');
     Route::get('/owners', [ThuCungController::class, 'owners']);
-    Route::put('/owners/{id}', [ThuCungController::class, 'updateChuNuoi'])->middleware('role:QUAN_TRI,NHAN_VIEN');
-    Route::delete('/owners/{id}', [ThuCungController::class, 'destroyChuNuoi'])->middleware('role:QUAN_TRI');
+    Route::put('/owners/{id}', [ThuCungController::class, 'updateOwner'])->middleware('role:QUAN_TRI,NHAN_VIEN');
+    Route::delete('/owners/{id}', [ThuCungController::class, 'destroyOwner'])->middleware('role:QUAN_TRI');
 
     // Lịch tiêm chủng: xem lịch và lịch sử; ghi nhận tiêm được thực hiện cùng phiếu khám.
     Route::get('/vaccinations/types', [TiemChungController::class, 'types']);
@@ -93,8 +93,8 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         ->middleware('role:QUAN_TRI,NHAN_VIEN');
 
     // Ghi nhận Spa và thanh toán thuộc nghiệp vụ nhân viên/quản trị.
-    Route::get('/spa/usages', [SuDungSpaController::class, 'index'])->middleware('role:QUAN_TRI,NHAN_VIEN');
-    Route::post('/spa/usages', [SuDungSpaController::class, 'store'])->middleware('role:QUAN_TRI,NHAN_VIEN');
+    Route::get('/spa/usages', [SuDungDichVuSpaController::class, 'index'])->middleware('role:QUAN_TRI,NHAN_VIEN');
+    Route::post('/spa/usages', [SuDungDichVuSpaController::class, 'store'])->middleware('role:QUAN_TRI,NHAN_VIEN');
 
     Route::get('/surgeries', [PhauThuatController::class, 'index']);
 
@@ -111,16 +111,16 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         Route::post('/medical/queue/{id}/start', [KhamBenhController::class, 'startQueueRecord']);
         Route::get('/medical/records/{id}', [KhamBenhController::class, 'show']);
         Route::post('/medical/prescriptions', [KhamBenhController::class, 'createPrescription']);
-        Route::get('/medical/history/pet/{petId}', [KhamBenhController::class, 'getHistoryByThuCung']);
+        Route::get('/medical/history/pet/{petId}', [KhamBenhController::class, 'getHistoryByPet']);
     });
 
     // Hóa đơn, xuất viện và ghi chú ưu tiên khám dành cho nhân viên/quản trị.
     Route::middleware('role:QUAN_TRI,NHAN_VIEN')->group(function () {
         Route::post('/medical/queue', [KhamBenhController::class, 'addToQueue']);
         Route::put('/medical/queue/{id}/note', [KhamBenhController::class, 'updateQueueNote']);
-        Route::get('/payment/eligible-pets', [ThanhToanController::class, 'eligibleThuCungs']);
+        Route::get('/payment/eligible-pets', [ThanhToanController::class, 'eligiblePets']);
         Route::get('/payment/invoices', [ThanhToanController::class, 'index']);
-        Route::get('/payment/pets/{petId}/preview', [ThanhToanController::class, 'previewThuCungCharges']);
+        Route::get('/payment/pets/{petId}/preview', [ThanhToanController::class, 'previewPetCharges']);
         Route::post('/payment/checkout', [ThanhToanController::class, 'createUnifiedInvoice']);
         Route::get('/payment/invoices/{id}', [ThanhToanController::class, 'show']);
         Route::get('/payment/visits/pending', [ThanhToanController::class, 'pendingVisits']);
@@ -128,9 +128,9 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         Route::post('/payment/pos/checkout', [ThanhToanController::class, 'createRetailInvoice']);
     });
 
-    Route::get('/analytics/dashboard', [ThongKeController::class, 'getOverview']);
-    Route::get('/analytics/inventory-alerts', [ThongKeController::class, 'getInventoryAlerts'])
+    Route::get('/analytics/dashboard', [TongQuanController::class, 'getOverview']);
+    Route::get('/analytics/inventory-alerts', [TongQuanController::class, 'getInventoryAlerts'])
         ->middleware('role:QUAN_TRI,NHAN_VIEN');
-    Route::get('/analytics/revenue', [ThongKeController::class, 'getRevenueReport'])
+    Route::get('/analytics/revenue', [TongQuanController::class, 'getRevenueReport'])
         ->middleware('role:QUAN_TRI');
 });

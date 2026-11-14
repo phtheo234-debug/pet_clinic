@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Long extends Model
+class LongNuoi extends Model
 {
-    protected $table = 'cages';
+    protected $table = 'long_nuoi';
     protected $primaryKey = 'cage_id';
     public $timestamps = false;
 

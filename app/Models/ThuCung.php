@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ThuCung extends Model
 {
-    protected $table = 'pets';
+    protected $table = 'thu_cung';
     protected $primaryKey = 'pet_id';
     public $timestamps = false;
 
@@ -36,7 +36,7 @@ class ThuCung extends Model
      */
     public function cage()
     {
-        return $this->belongsTo(Long::class, 'cage_id', 'cage_id');
+        return $this->belongsTo(LongNuoi::class, 'cage_id', 'cage_id');
     }
 
     /**
@@ -44,6 +44,6 @@ class ThuCung extends Model
      */
     public function weightLogs()
     {
-        return $this->hasMany(WeightLog::class, 'pet_id', 'pet_id');
+        return $this->hasMany(LichSuCanNang::class, 'pet_id', 'pet_id');
     }
 }

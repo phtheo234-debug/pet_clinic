@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         const result = await apiRequest("/users/me");
         const user = result.data || {};
-        document.getElementById("profileNguoiDungname").value = user.username || "";
+        document.getElementById("profileUsername").value = user.username || "";
         document.getElementById("profileName").value = user.ho_ten || "";
         document.getElementById("profileEmail").value = user.email || "";
         document.getElementById("profilePhone").value = user.phone || "";
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 })
             });
             localStorage.setItem("current_user", JSON.stringify(result.data));
-            const name = document.getElementById("navNguoiDungName");
+            const name = document.getElementById("navUserName");
             if (name) name.textContent = result.data.ho_ten;
             alert("profileAlert", result.message, true);
         } catch (error) { alert("profileAlert", error.message); }

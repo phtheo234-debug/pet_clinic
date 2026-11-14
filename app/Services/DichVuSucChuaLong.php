@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 
-class LongOccupancyService
+class DichVuSucChuaLong
 {
     /**
      * Đồng bộ số lượng thú thực tế và trạng thái lồng.
@@ -16,7 +16,7 @@ class LongOccupancyService
      */
     public function sync(int $cageId): ?object
     {
-        $cage = DB::table('cages')
+        $cage = DB::table('long_nuoi')
             ->where('cage_id', $cageId)
             ->lockForUpdate()
             ->first();
@@ -25,7 +25,7 @@ class LongOccupancyService
             return null;
         }
 
-        $actualCount = DB::table('pets')
+        $actualCount = DB::table('thu_cung')
             ->where('cage_id', $cageId)
             ->count();
 
@@ -33,7 +33,7 @@ class LongOccupancyService
             ? $cage->trangthai
             : ($actualCount > 0 ? 'DA_CO_THU' : 'CON_TRONG');
 
-        DB::table('cages')
+        DB::table('long_nuoi')
             ->where('cage_id', $cageId)
             ->update([
                 'soluonghientai' => $actualCount,

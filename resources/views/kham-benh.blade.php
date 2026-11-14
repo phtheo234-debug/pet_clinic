@@ -1,12 +1,12 @@
-@extends('layouts.app')
+@extends('layouts.bo-cuc')
 
-@section('title', 'Khám bệnh & Kê đơn - ThuCung Clinic')
+@section('title', 'Khám bệnh & Kê đơn - Pet Clinic')
 @section('page_title', 'Khám bệnh Lâm sàng, Kê đơn & Tiêm phòng')
 
 @section('content')
 @php
-    $medicalNguoiDung = request()->attributes->get('web_authenticated_user');
-    $medicalCurrentRole = strtoupper(trim($medicalNguoiDung->vaitro ?? ''));
+    $medicalUser = request()->attributes->get('web_authenticated_user');
+    $medicalCurrentRole = strtoupper(trim($medicalUser->vaitro ?? ''));
     $canUseMedicalQueue = in_array($medicalCurrentRole, ['QUAN_TRI', 'BAC_SI'], true);
 @endphp
 @if($canUseMedicalQueue)
@@ -154,8 +154,8 @@
 </div>
 
 @php
-    $medicalNguoiDung = request()->attributes->get('web_authenticated_user');
-    $isMedicalAdmin = $medicalNguoiDung && strtoupper(trim($medicalNguoiDung->vaitro ?? '')) === 'QUAN_TRI';
+    $medicalUser = request()->attributes->get('web_authenticated_user');
+    $isMedicalAdmin = $medicalUser && strtoupper(trim($medicalUser->vaitro ?? '')) === 'QUAN_TRI';
 @endphp
 @if($isMedicalAdmin)
 <div class="card shadow-sm mb-4">
@@ -211,5 +211,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/kham_benh.js') }}?v={{ filemtime(public_path('js/kham_benh.js')) }}"></script>
+<script src="{{ asset('js/kham-benh.js') }}?v={{ filemtime(public_path('js/kham-benh.js')) }}"></script>
 @endpush

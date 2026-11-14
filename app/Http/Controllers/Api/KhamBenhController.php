@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Schema;
 class KhamBenhController extends Controller
 {
     public function __construct(
-        protected KhoController $inventory,
+        protected KhoController $kho_hang,
         private DichVuSucChuaLong $cageOccupancy
     ) {
     }
@@ -23,24 +23,24 @@ class KhamBenhController extends Controller
     public function index()
     {
         try {
-            $records = DB::table('medical_records')
-                ->leftJoin('pets', 'medical_records.pet_id', '=', 'pets.pet_id')
-                ->leftJoin('cages as current_cages', 'pets.cage_id', '=', 'current_cages.cage_id')
-                ->leftJoin('boarding_requests as br', 'br.medical_record_id', '=', 'medical_records.record_id')
-                ->leftJoin('cages as suggested_cages', 'br.suggested_cage_id', '=', 'suggested_cages.cage_id')
+            $records = DB::table('phieu_kham')
+                ->leftJoin('thu_cung', 'phieu_kham.pet_id', '=', 'thu_cung.pet_id')
+                ->leftJoin('long_nuoi as current_cages', 'thu_cung.cage_id', '=', 'current_cages.cage_id')
+                ->leftJoin('yeu_cau_luu_tru as br', 'br.medical_record_id', '=', 'phieu_kham.record_id')
+                ->leftJoin('long_nuoi as suggested_cages', 'br.suggested_cage_id', '=', 'suggested_cages.cage_id')
                 ->select(
-                    'medical_records.*',
-                    'pets.mathucung',
-                    'pets.ten_thucung',
-                    'pets.loai',
-                    'pets.giong',
+                    'phieu_kham.*',
+                    'thu_cung.mathucung',
+                    'thu_cung.ten_thucung',
+                    'thu_cung.loai',
+                    'thu_cung.giong',
                     DB::raw('COALESCE(current_cages.malong, suggested_cages.malong) as malong'),
                     DB::raw('COALESCE(current_cages.ten_long, suggested_cages.ten_long) as ten_long'),
                     'br.status as boarding_status',
                     'br.loai_long_yeu_cau',
                     'br.yeu_cau_cach_ly'
                 )
-                ->orderByDesc('medical_records.ngaykham')
+                ->orderByDesc('phieu_kham.ngaykham')
                 ->limit(20)
                 ->get();
 
@@ -60,18 +60,18 @@ class KhamBenhController extends Controller
     public function addToQueue(Request $request)
     {
         $fields = $request->validate([
-            'pet_id' => 'required|integer|exists:pets,pet_id',
+            'pet_id' => 'required|integer|exists:thu_cung,pet_id',
             'ghi_chu' => 'nullable|string|max:2000',
         ]);
-        $active = DB::table('medical_queue')->where('pet_id', $fields['pet_id'])
+        $active = DB::table('hang_doi_kham')->where('pet_id', $fields['pet_id'])
             ->whereIn('trangthai', ['CHO_KHAM', 'DANG_KHAM'])->first();
         if ($active) {
-            DB::table('medical_queue')->where('queue_id', $active->queue_id)->update([
+            DB::table('hang_doi_kham')->where('queue_id', $active->queue_id)->update([
                 'ghi_chu' => trim($fields['ghi_chu'] ?? '') ?: null, 'updated_at' => now(),
             ]);
             return response()->json(['status' => 'success', 'message' => 'Thú cưng đã có trong danh sách chờ; ghi chú đã được cập nhật.']);
         }
-        $id = DB::table('medical_queue')->insertGetId([
+        $id = DB::table('hang_doi_kham')->insertGetId([
             'pet_id' => $fields['pet_id'], 'created_by' => $request->user()->user_id,
             'ghi_chu' => trim($fields['ghi_chu'] ?? '') ?: null, 'trangthai' => 'CHO_KHAM',
             'created_at' => now(), 'updated_at' => now(),
@@ -82,9 +82,9 @@ class KhamBenhController extends Controller
     /** Danh sách chờ khám: đang khám trước, tiếp theo là ca ưu tiên; vẫn hiển thị ca đã khám trong ngày. */
     public function queue()
     {
-        $records = DB::table('medical_queue as q')
-            ->join('pets as p', 'p.pet_id', '=', 'q.pet_id')
-            ->leftJoin('owners as o', 'o.owner_id', '=', 'p.owner_id')
+        $records = DB::table('hang_doi_kham as q')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'q.pet_id')
+            ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
             ->where(function ($query) {
                 $query->whereIn('q.trangthai', ['CHO_KHAM', 'DANG_KHAM'])
                     ->orWhere(function ($completed) {
@@ -108,7 +108,7 @@ class KhamBenhController extends Controller
     public function startQueueRecord(Request $request, $id)
     {
         return DB::transaction(function () use ($id) {
-            $queue = DB::table('medical_queue')->where('queue_id', $id)->lockForUpdate()->first();
+            $queue = DB::table('hang_doi_kham')->where('queue_id', $id)->lockForUpdate()->first();
             abort_if(!$queue, 404, 'Không tìm thấy lượt chờ khám.');
             if ($queue->trangthai === 'DA_KHAM') {
                 return response()->json(['status' => 'error', 'message' => 'Lượt khám này đã hoàn thành.'], 409);
@@ -116,7 +116,7 @@ class KhamBenhController extends Controller
             if ($queue->trangthai === 'DANG_KHAM') {
                 return response()->json(['status' => 'success', 'message' => 'Đây là ca đang được khám.', 'data' => ['pet_id' => $queue->pet_id]]);
             }
-            $otherActive = DB::table('medical_queue')
+            $otherActive = DB::table('hang_doi_kham')
                 ->where('trangthai', 'DANG_KHAM')
                 ->where('queue_id', '<>', $id)
                 ->lockForUpdate()
@@ -124,7 +124,7 @@ class KhamBenhController extends Controller
             if ($otherActive) {
                 return response()->json(['status' => 'error', 'message' => 'Đang có một thú cưng được khám. Hãy lưu phiếu khám hiện tại trước khi chọn ca tiếp theo.'], 409);
             }
-            DB::table('medical_queue')->where('queue_id', $id)->update(['trangthai' => 'DANG_KHAM', 'updated_at' => now()]);
+            DB::table('hang_doi_kham')->where('queue_id', $id)->update(['trangthai' => 'DANG_KHAM', 'updated_at' => now()]);
             return response()->json(['status' => 'success', 'message' => 'Đã chọn ca khám.', 'data' => ['pet_id' => $queue->pet_id]]);
         });
     }
@@ -133,9 +133,9 @@ class KhamBenhController extends Controller
     public function updateQueueNote(Request $request, $id)
     {
         $fields = $request->validate(['ghi_chu' => 'nullable|string|max:2000']);
-        $queue = DB::table('medical_queue')->where('queue_id', $id)->first();
+        $queue = DB::table('hang_doi_kham')->where('queue_id', $id)->first();
         abort_if(!$queue, 404, 'Không tìm thấy lượt chờ khám.');
-        DB::table('medical_queue')->where('queue_id', $id)->update([
+        DB::table('hang_doi_kham')->where('queue_id', $id)->update([
             'ghi_chu' => trim($fields['ghi_chu'] ?? '') ?: null, 'updated_at' => now(),
         ]);
         return response()->json(['status' => 'success', 'message' => 'Đã cập nhật ghi chú ưu tiên.']);
@@ -148,20 +148,20 @@ class KhamBenhController extends Controller
     public function store(Request $request)
     {
         $fields = $request->validate([
-            'pet_id' => 'required|integer|exists:pets,pet_id',
+            'pet_id' => 'required|integer|exists:thu_cung,pet_id',
             'cannangkhi_kham' => 'required|numeric|min:0.1',
             'trieuchung' => 'nullable|string',
             'chandoan' => 'required|string',
             'trangthai' => 'nullable|in:CHUA_KHAM,DANG_DIEU_TRI,HOAN_THANH,CHUYEN_VIEN',
             'huong_xuly' => 'nullable|in:OUTPATIENT,INPATIENT,SURGERY,TRANSFER',
             'yeu_cau_cach_ly' => 'nullable|boolean',
-            'surgery_id' => 'nullable|required_if:huong_xuly,SURGERY|integer|exists:surgeries,surgery_id',
+            'surgery_id' => 'nullable|required_if:huong_xuly,SURGERY|integer|exists:danh_muc_phau_thuat,surgery_id',
             'items' => 'nullable|array',
-            'items.*.item_id' => 'required|integer|exists:inventory,item_id',
+            'items.*.item_id' => 'required|integer|exists:kho_hang,item_id',
             'items.*.soluong' => 'required|integer|min:1',
             'items.*.huongdan' => 'nullable|string|max:1000',
             'vaccination' => 'nullable|array',
-            'vaccination.vaccination_type_id' => 'required_with:vaccination|integer|exists:vaccination_types,vaccination_type_id',
+            'vaccination.vaccination_type_id' => 'required_with:vaccination|integer|exists:loai_vac_xin,vaccination_type_id',
             'vaccination.vaccinated_at' => 'required_with:vaccination|date',
             'vaccination.next_due_date' => 'nullable|date|after_or_equal:vaccination.vaccinated_at',
             'vaccination.notes' => 'nullable|string|max:2000',
@@ -169,7 +169,7 @@ class KhamBenhController extends Controller
 
         try {
             return DB::transaction(function () use ($request, $fields) {
-                $pet = DB::table('pets')
+                $pet = DB::table('thu_cung')
                     ->where('pet_id', $fields['pet_id'])
                     ->lockForUpdate()
                     ->first();
@@ -185,7 +185,7 @@ class KhamBenhController extends Controller
                 $needsIsolation = (bool) ($fields['yeu_cau_cach_ly'] ?? false);
                 $surgery = null;
                 if ($huongXuLy === 'SURGERY') {
-                    $surgery = DB::table('surgeries')->where('surgery_id', $fields['surgery_id'])
+                    $surgery = DB::table('danh_muc_phau_thuat')->where('surgery_id', $fields['surgery_id'])
                         ->where('trangthai', 1)->first();
                     if (!$surgery) {
                         throw new Exception('Loại phẫu thuật không tồn tại hoặc đã ngừng áp dụng.');
@@ -195,10 +195,10 @@ class KhamBenhController extends Controller
                     throw new Exception('Chuyển viện không được kê thuốc/vắc-xin tại phiếu này.');
                 }
 
-                $queueInProgress = DB::table('medical_queue')->where('pet_id', $fields['pet_id'])->where('trangthai', 'DANG_KHAM')->exists();
-                DB::table('medical_queue')->where('pet_id', $fields['pet_id'])->whereIn('trangthai', ['CHO_KHAM', 'DANG_KHAM'])->update(['trangthai' => 'DA_KHAM', 'updated_at' => now()]);
+                $queueInProgress = DB::table('hang_doi_kham')->where('pet_id', $fields['pet_id'])->where('trangthai', 'DANG_KHAM')->exists();
+                DB::table('hang_doi_kham')->where('pet_id', $fields['pet_id'])->whereIn('trangthai', ['CHO_KHAM', 'DANG_KHAM'])->update(['trangthai' => 'DA_KHAM', 'updated_at' => now()]);
 
-                $recordId = DB::table('medical_records')->insertGetId([
+                $recordId = DB::table('phieu_kham')->insertGetId([
                     'pet_id' => $fields['pet_id'],
                     'doctor_id' => $request->user()->user_id,
                     'ngaykham' => now(),
@@ -212,7 +212,7 @@ class KhamBenhController extends Controller
                     'surgery_price' => $surgery->gia ?? null,
                 ]);
 
-                DB::table('weight_logs')->insert([
+                DB::table('lich_su_can_nang')->insert([
                     'pet_id' => $fields['pet_id'],
                     'cannang' => $fields['cannangkhi_kham'],
                     'ngaydo' => now(),
@@ -222,13 +222,13 @@ class KhamBenhController extends Controller
 
                 // Chọn thuốc/vắc-xin từ kho và trừ tồn theo FEFO ngay khi lưu phiếu khám.
                 foreach (($huongXuLy === 'TRANSFER' ? [] : ($fields['items'] ?? [])) as $usedItem) {
-                    $inventoryItem = DB::table('inventory')->where('item_id', $usedItem['item_id'])->lockForUpdate()->first();
+                    $inventoryItem = DB::table('kho_hang')->where('item_id', $usedItem['item_id'])->lockForUpdate()->first();
                     if (!$inventoryItem || !in_array($inventoryItem->danhmuc, ['THUOC', 'VAC_XIN'], true)) {
                         throw new Exception('Chỉ được sử dụng thuốc hoặc vắc-xin có trong danh mục kho.');
                     }
                     $quantity = (int) $usedItem['soluong'];
-                    $this->inventory->fefoDeduct((int) $inventoryItem->item_id, $quantity);
-                    DB::table('prescriptions')->insert([
+                    $this->kho_hang->fefoDeduct((int) $inventoryItem->item_id, $quantity);
+                    DB::table('don_thuoc')->insert([
                         'record_id' => $recordId, 'item_id' => $inventoryItem->item_id,
                         'soluong' => $quantity, 'huongdan' => $usedItem['huongdan'] ?? null,
                         'created_at' => now(), 'updated_at' => now(),
@@ -237,7 +237,7 @@ class KhamBenhController extends Controller
                 // Ghi nhận mũi tiêm trong cùng giao dịch với phiếu khám và xuất kho.
                 if (!empty($fields['vaccination'])) {
                     $vaccination = $fields['vaccination'];
-                    $vaccineType = DB::table('vaccination_types')
+                    $vaccineType = DB::table('loai_vac_xin')
                         ->where('vaccination_type_id', $vaccination['vaccination_type_id'])
                         ->where('is_active', true)->first();
                     if (!$vaccineType || !$vaccineType->inventory_item_id) {
@@ -250,7 +250,7 @@ class KhamBenhController extends Controller
                     if (!$includedDose) {
                         throw new Exception('Không tìm thấy đúng 1 liều vắc-xin trong danh sách xuất kho.');
                     }
-                    DB::table('pet_vaccinations')->insert([
+                    DB::table('lich_su_tiem_chung')->insert([
                         'pet_id' => $fields['pet_id'],
                         'vaccination_type_id' => $vaccineType->vaccination_type_id,
                         'vaccinated_at' => $vaccination['vaccinated_at'],
@@ -270,7 +270,7 @@ class KhamBenhController extends Controller
                         ? 'CACH_LY'
                         : ($huongXuLy === 'SURGERY' ? 'CAP_CUU_ICU' : 'THUONG');
                     $currentCage = $pet->cage_id
-                        ? DB::table('cages')->where('cage_id', $pet->cage_id)->first()
+                        ? DB::table('long_nuoi')->where('cage_id', $pet->cage_id)->first()
                         : null;
                     $needsCageMove = $pet->cage_id && (
                         !$currentCage
@@ -281,13 +281,13 @@ class KhamBenhController extends Controller
 
                     if ($pet->cage_id && !$needsCageMove) {
                         $alreadyBoarded = true;
-                        $boardingRequest = DB::table('boarding_requests')
+                        $boardingRequest = DB::table('yeu_cau_luu_tru')
                             ->where('pet_id', $pet->pet_id)
                             ->where('status', 'checked_in')
                             ->orderByDesc('request_id')
                             ->first();
                     } else {
-                        $pendingRequest = DB::table('boarding_requests')
+                        $pendingRequest = DB::table('yeu_cau_luu_tru')
                             ->where('pet_id', $pet->pet_id)
                             ->where('status', 'pending')
                             ->lockForUpdate()
@@ -306,18 +306,18 @@ class KhamBenhController extends Controller
                         ];
 
                         if ($pendingRequest) {
-                            DB::table('boarding_requests')
+                            DB::table('yeu_cau_luu_tru')
                                 ->where('request_id', $pendingRequest->request_id)
                                 ->update($requestData);
                             $requestId = $pendingRequest->request_id;
                         } else {
-                            $requestId = DB::table('boarding_requests')->insertGetId(array_merge(
+                            $requestId = DB::table('yeu_cau_luu_tru')->insertGetId(array_merge(
                                 $requestData,
                                 ['pet_id' => $pet->pet_id, 'status' => 'pending', 'created_at' => now()]
                             ));
                         }
 
-                        $boardingRequest = DB::table('boarding_requests')->where('request_id', $requestId)->first();
+                        $boardingRequest = DB::table('yeu_cau_luu_tru')->where('request_id', $requestId)->first();
                     }
                 }
 
@@ -325,7 +325,7 @@ class KhamBenhController extends Controller
 
                 // Nếu bác sĩ đổi chỉ định về ngoại trú, hủy yêu cầu lưu trú còn chờ.
                 if ($huongXuLy === 'OUTPATIENT' && !$isTransfer) {
-                    DB::table('boarding_requests')
+                    DB::table('yeu_cau_luu_tru')
                         ->where('pet_id', $pet->pet_id)
                         ->where('status', 'pending')
                         ->update(['status' => 'cancelled', 'updated_at' => now()]);
@@ -335,7 +335,7 @@ class KhamBenhController extends Controller
                     if ($pet->cage_id) {
                         $oldCageId = (int) $pet->cage_id;
 
-                        DB::table('pet_boardings')
+                        DB::table('luot_luu_tru')
                             ->where('pet_id', $pet->pet_id)
                             ->where('cage_id', $oldCageId)
                             ->where('status', 'checked_in')
@@ -349,17 +349,17 @@ class KhamBenhController extends Controller
                         $this->cageOccupancy->sync($oldCageId);
                     }
 
-                    DB::table('boarding_requests')
+                    DB::table('yeu_cau_luu_tru')
                         ->where('pet_id', $pet->pet_id)
                         ->where('status', 'pending')
                         ->update(['status' => 'cancelled', 'updated_at' => now()]);
 
-                    DB::table('boarding_requests')
+                    DB::table('yeu_cau_luu_tru')
                         ->where('pet_id', $pet->pet_id)
                         ->where('status', 'checked_in')
                         ->update(['status' => 'completed', 'updated_at' => now()]);
 
-                    DB::table('pets')->where('pet_id', $pet->pet_id)->update([
+                    DB::table('thu_cung')->where('pet_id', $pet->pet_id)->update([
                         'trangthai' => 'CHUYEN_VIEN',
                         'cage_id' => null,
                     ]);
@@ -378,7 +378,7 @@ class KhamBenhController extends Controller
                     'status' => 'success',
                     'message' => $message,
                     'boarding_request' => $boardingRequest,
-                    'data' => DB::table('medical_records')->where('record_id', $recordId)->first(),
+                    'data' => DB::table('phieu_kham')->where('record_id', $recordId)->first(),
                 ], 201);
             });
         } catch (Exception $e) {
@@ -394,19 +394,19 @@ class KhamBenhController extends Controller
     /** Chi tiết phiếu khám để in kết quả khám và đơn thuốc/vắc-xin. */
     public function show($id)
     {
-        $record = DB::table('medical_records as mr')
-            ->join('pets as p', 'p.pet_id', '=', 'mr.pet_id')
-            ->leftJoin('owners as o', 'o.owner_id', '=', 'p.owner_id')
-            ->leftJoin('users as u', 'u.user_id', '=', 'mr.doctor_id')
-            ->leftJoin('surgeries as s', 's.surgery_id', '=', 'mr.surgery_id')
+        $record = DB::table('phieu_kham as mr')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'mr.pet_id')
+            ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
+            ->leftJoin('nguoi_dung as u', 'u.user_id', '=', 'mr.doctor_id')
+            ->leftJoin('danh_muc_phau_thuat as s', 's.surgery_id', '=', 'mr.surgery_id')
             ->where('mr.record_id', $id)
             ->select('mr.*', 'p.mathucung', 'p.ten_thucung', 'p.loai', 'p.giong', 'p.gioitinh', 'p.ngaysinh',
                 'o.ho_ten as ten_chu_nuoi', 'o.phone as sdt_chu_nuoi', 'u.ho_ten as ten_bac_si',
                 's.ma_phauthuat', 's.ten_phauthuat')
             ->first();
         abort_if(!$record, 404, 'Không tìm thấy phiếu khám.');
-        $record->items = DB::table('prescriptions as rx')
-            ->join('inventory as i', 'i.item_id', '=', 'rx.item_id')
+        $record->items = DB::table('don_thuoc as rx')
+            ->join('kho_hang as i', 'i.item_id', '=', 'rx.item_id')
             ->where('rx.record_id', $id)
             ->select('i.danhmuc', 'i.masanpham', 'i.ten_sanpham', 'i.donvitinh', 'rx.soluong', 'rx.huongdan', 'i.dongia')
             ->get();
@@ -418,16 +418,16 @@ class KhamBenhController extends Controller
     public function createPrescription(Request $request)
     {
         $request->validate([
-            'pet_id'            => 'required|integer|exists:pets,pet_id',
-            'medical_record_id' => 'required|integer|exists:medical_records,record_id',
-            'medicine_id'       => 'required|integer|exists:inventory,item_id',
+            'pet_id'            => 'required|integer|exists:thu_cung,pet_id',
+            'medical_record_id' => 'required|integer|exists:phieu_kham,record_id',
+            'medicine_id'       => 'required|integer|exists:kho_hang,item_id',
             'doses_per_day'     => 'required|integer|min:1',
             'total_days'        => 'required|integer|min:1',
         ]);
 
         try {
             return DB::transaction(function () use ($request) {
-                $record = DB::table('medical_records')->where('record_id', $request->medical_record_id)->first();
+                $record = DB::table('phieu_kham')->where('record_id', $request->medical_record_id)->first();
                 if ((int) $record->pet_id !== (int) $request->pet_id) {
                     return response()->json([
                         'status'  => 'error',
@@ -435,7 +435,7 @@ class KhamBenhController extends Controller
                     ], 422);
                 }
 
-                $item = DB::table('inventory')->where('item_id', $request->medicine_id)->first();
+                $item = DB::table('kho_hang')->where('item_id', $request->medicine_id)->first();
                 
                 // Chỉ cho phép kê đơn từ mặt hàng thuốc
                 if ($item->danhmuc !== 'THUOC') {
@@ -467,9 +467,9 @@ class KhamBenhController extends Controller
                 $unitsPerDose = $mgPerDose / $mgPerUnit;
                 $totalUnits = (int) ceil(round($unitsPerDose * $request->doses_per_day * $request->total_days, 6));
 
-                $deductions = $this->inventory->fefoDeduct((int) $item->item_id, $totalUnits);
+                $deductions = $this->kho_hang->fefoDeduct((int) $item->item_id, $totalUnits);
 
-                $prescriptionId = DB::table('prescriptions')->insertGetId([
+                $prescriptionId = DB::table('don_thuoc')->insertGetId([
                     'record_id' => $record->record_id,
                     'item_id'   => $item->item_id,
                     'soluong'   => $totalUnits,
@@ -501,16 +501,16 @@ class KhamBenhController extends Controller
      */
     public function getHistoryByPet($petId)
     {
-        $records = DB::table('medical_records')
+        $records = DB::table('phieu_kham')
             ->where('pet_id', $petId)
             ->orderByDesc('ngaykham')
             ->get();
 
         foreach ($records as $record) {
-            $record->prescriptions = DB::table('prescriptions')
-                ->join('inventory', 'prescriptions.item_id', '=', 'inventory.item_id')
-                ->where('prescriptions.record_id', $record->record_id)
-                ->select('prescriptions.*', 'inventory.ten_sanpham', 'inventory.donvitinh')
+            $record->don_thuoc = DB::table('don_thuoc')
+                ->join('kho_hang', 'don_thuoc.item_id', '=', 'kho_hang.item_id')
+                ->where('don_thuoc.record_id', $record->record_id)
+                ->select('don_thuoc.*', 'kho_hang.ten_sanpham', 'kho_hang.donvitinh')
                 ->get();
         }
 

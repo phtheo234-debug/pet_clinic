@@ -29,7 +29,7 @@ class QuanLyLongController extends Controller
         $cage = DB::transaction(function () use ($fields) {
             // Mã tạm duy nhất giúp tạo ID trước, sau đó sinh mã LONG theo ID.
             $temporaryCode = 'TMP' . Str::random(16);
-            $id = DB::table('cages')->insertGetId([
+            $id = DB::table('long_nuoi')->insertGetId([
                 'malong' => $temporaryCode,
                 'ten_long' => trim($fields['ten_long']),
                 'loailong' => $fields['loailong'],
@@ -41,9 +41,9 @@ class QuanLyLongController extends Controller
             ], 'cage_id');
 
             $code = 'LONG' . str_pad((string) $id, 3, '0', STR_PAD_LEFT);
-            DB::table('cages')->where('cage_id', $id)->update(['malong' => $code]);
+            DB::table('long_nuoi')->where('cage_id', $id)->update(['malong' => $code]);
 
-            return DB::table('cages')->where('cage_id', $id)->first();
+            return DB::table('long_nuoi')->where('cage_id', $id)->first();
         });
 
         return response()->json([
@@ -65,12 +65,12 @@ class QuanLyLongController extends Controller
         ]);
 
         return DB::transaction(function () use ($fields, $id) {
-            $cage = DB::table('cages')->where('cage_id', $id)->lockForUpdate()->first();
+            $cage = DB::table('long_nuoi')->where('cage_id', $id)->lockForUpdate()->first();
             if (!$cage) {
                 return response()->json(['status' => 'error', 'message' => 'Không tìm thấy lồng.'], 404);
             }
 
-            $actualCount = DB::table('pets')->where('cage_id', $id)->count();
+            $actualCount = DB::table('thu_cung')->where('cage_id', $id)->count();
             if ((int) $fields['succhua'] < $actualCount) {
                 return response()->json([
                     'status' => 'error',
@@ -78,12 +78,12 @@ class QuanLyLongController extends Controller
                 ], 422);
             }
 
-            $occupants = DB::table('pets')->where('cage_id', $id)->get();
+            $occupants = DB::table('thu_cung')->where('cage_id', $id)->get();
             foreach ($occupants as $occupant) {
                 if (mb_strtolower((string) $occupant->loai) !== mb_strtolower(trim($fields['loai_ap_dung']))) {
                     return response()->json(['status' => 'error', 'message' => 'Loài áp dụng phải phù hợp với thú cưng đang ở trong lồng.'], 422);
                 }
-                $weight = DB::table('weight_logs')->where('pet_id', $occupant->pet_id)->orderByDesc('ngaydo')->value('cannang');
+                $weight = DB::table('lich_su_can_nang')->where('pet_id', $occupant->pet_id)->orderByDesc('ngaydo')->value('cannang');
                 if ($weight !== null && (float) $weight > (float) $fields['tai_trong_toi_da']) {
                     return response()->json(['status' => 'error', 'message' => 'Cân chứa tối đa không được nhỏ hơn cân nặng thú đang lưu trú.'], 422);
                 }
@@ -100,7 +100,7 @@ class QuanLyLongController extends Controller
                 ? $fields['trangthai']
                 : ($actualCount > 0 ? 'DA_CO_THU' : 'CON_TRONG');
 
-            DB::table('cages')->where('cage_id', $id)->update([
+            DB::table('long_nuoi')->where('cage_id', $id)->update([
                 'ten_long' => trim($fields['ten_long']),
                 'loailong' => $fields['loailong'],
                 'succhua' => $fields['succhua'],
@@ -113,7 +113,7 @@ class QuanLyLongController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Cập nhật lồng lưu trú thành công!',
-                'data' => DB::table('cages')->where('cage_id', $id)->first(),
+                'data' => DB::table('long_nuoi')->where('cage_id', $id)->first(),
             ]);
         });
     }
@@ -121,13 +121,13 @@ class QuanLyLongController extends Controller
     public function destroy(int $id)
     {
         return DB::transaction(function () use ($id) {
-            $cage = DB::table('cages')->where('cage_id', $id)->lockForUpdate()->first();
+            $cage = DB::table('long_nuoi')->where('cage_id', $id)->lockForUpdate()->first();
             if (!$cage) {
                 return response()->json(['status' => 'error', 'message' => 'Không tìm thấy lồng.'], 404);
             }
 
-            $hasPets = DB::table('pets')->where('cage_id', $id)->exists();
-            $hasHistory = DB::table('pet_boardings')->where('cage_id', $id)->exists();
+            $hasPets = DB::table('thu_cung')->where('cage_id', $id)->exists();
+            $hasHistory = DB::table('luot_luu_tru')->where('cage_id', $id)->exists();
 
             if ($hasPets || $hasHistory) {
                 return response()->json([
@@ -136,7 +136,7 @@ class QuanLyLongController extends Controller
                 ], 409);
             }
 
-            DB::table('cages')->where('cage_id', $id)->delete();
+            DB::table('long_nuoi')->where('cage_id', $id)->delete();
 
             return response()->json(['status' => 'success', 'message' => 'Đã xóa lồng lưu trú.']);
         });

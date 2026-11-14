@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.bo-cuc')
 
-@section('title', 'Lồng lưu trú - ThuCung Clinic')
+@section('title', 'Lồng lưu trú - Pet Clinic')
 @section('page_title', 'Quản lý Lồng Lưu trú & Nội trú')
 
 @section('content')
@@ -87,20 +87,20 @@
 ========================================= --}}
 
 @php
-    $currentNguoiDung = request()->attributes->get('web_authenticated_user');
+    $currentUser = request()->attributes->get('web_authenticated_user');
 
-    $isAdminLong = $currentNguoiDung
-        && strtoupper(trim($currentNguoiDung->vaitro ?? '')) === 'QUAN_TRI';
+    $isAdminCage = $currentUser
+        && strtoupper(trim($currentUser->vaitro ?? '')) === 'QUAN_TRI';
 @endphp
 
-@if($isAdminLong)
+@if($isAdminCage)
 
     <div class="d-flex justify-content-end mb-3"
-         id="adminLongToolbar">
+         id="adminCageToolbar">
 
         <button type="button"
                 class="btn btn-primary"
-                onclick="openLongForm()">
+                onclick="openCageForm()">
 
             <i class="fas fa-plus mr-1"></i>
             Thêm lồng lưu trú
@@ -111,7 +111,7 @@
 
 @else
 
-    <div id="adminLongToolbar" class="d-none"></div>
+    <div id="adminCageToolbar" class="d-none"></div>
 
 @endif
 
@@ -135,7 +135,7 @@
      4. MODAL THÊM / SỬA LỒNG
 ========================================= --}}
 
-@if($isAdminLong)
+@if($isAdminCage)
 
     <div class="modal fade"
          id="cageFormModal"
@@ -316,7 +316,7 @@
 
                     <button type="submit"
                             class="btn btn-primary"
-                            id="btnSaveLong">
+                            id="btnSaveCage">
 
                         Lưu lồng
 
@@ -334,7 +334,7 @@
 
 
 {{-- Modal tự xếp lồng --}}
-<div class="modal fade" id="manualLongModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="manualCageModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -342,10 +342,10 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Đóng"><span>&times;</span></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small" id="manualLongThuCungInfo"></p>
+                <p class="text-muted small" id="manualCagePetInfo"></p>
                 <div class="form-group mb-0">
-                    <label for="manualLongSelect">Chọn lồng phù hợp</label>
-                    <select class="form-control" id="manualLongSelect"></select>
+                    <label for="manualCageSelect">Chọn lồng phù hợp</label>
+                    <select class="form-control" id="manualCageSelect"></select>
                     <small class="form-text text-muted">Chỉ hiển thị lồng đúng loại yêu cầu, đúng loài, đủ sức chứa và giới hạn cân nặng.</small>
                 </div>
                 <div class="alert alert-info small mt-3 mb-0">
@@ -354,7 +354,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmManualLong">
+                <button type="button" class="btn btn-primary" id="btnConfirmManualCage">
                     <i class="fas fa-check mr-1"></i> Xác nhận xếp lồng
                 </button>
             </div>
@@ -371,6 +371,6 @@
 
 @push('scripts')
 
-<script src="{{ asset('js/long.js') }}?v={{ filemtime(public_path('js/long.js')) }}"></script>
+<script src="{{ asset('js/long-nuoi.js') }}?v={{ filemtime(public_path('js/long-nuoi.js')) }}"></script>
 
 @endpush

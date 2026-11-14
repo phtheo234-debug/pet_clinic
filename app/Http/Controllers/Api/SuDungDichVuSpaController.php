@@ -6,16 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class SuDungSpaController extends Controller
+class SuDungDichVuSpaController extends Controller
 {
     /**
      * Danh sách lịch sử dịch vụ Spa đã ghi nhận.
      */
     public function index(Request $request)
     {
-        $query = DB::table('spa_usages as su')
-            ->join('pets as p', 'p.pet_id', '=', 'su.pet_id')
-            ->join('users as u', 'u.user_id', '=', 'su.staff_id')
+        $query = DB::table('luot_dich_vu_spa as su')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'su.pet_id')
+            ->join('nguoi_dung as u', 'u.user_id', '=', 'su.staff_id')
             ->select(
                 'su.*',
                 'p.mathucung',
@@ -48,14 +48,14 @@ class SuDungSpaController extends Controller
         }
 
         $fields = $request->validate([
-            'pet_id' => 'required|integer|exists:pets,pet_id',
-            'item_id' => 'required|integer|exists:inventory,item_id',
+            'pet_id' => 'required|integer|exists:thu_cung,pet_id',
+            'item_id' => 'required|integer|exists:kho_hang,item_id',
             'soluong' => 'required|integer|min:1|max:100',
             'ghichu' => 'nullable|string|max:255',
         ]);
 
         return DB::transaction(function () use ($fields, $user) {
-            $service = DB::table('inventory')
+            $service = DB::table('kho_hang')
                 ->where('item_id', $fields['item_id'])
                 ->lockForUpdate()
                 ->first();
@@ -67,7 +67,7 @@ class SuDungSpaController extends Controller
                 ], 422);
             }
 
-            $pet = DB::table('pets')->where('pet_id', $fields['pet_id'])->first();
+            $pet = DB::table('thu_cung')->where('pet_id', $fields['pet_id'])->first();
             if (!$pet) {
                 return response()->json([
                     'status' => 'error',
@@ -86,7 +86,7 @@ class SuDungSpaController extends Controller
             $quantity = (int) $fields['soluong'];
             $total = $unitPrice * $quantity;
 
-            $usageId = DB::table('spa_usages')->insertGetId([
+            $usageId = DB::table('luot_dich_vu_spa')->insertGetId([
                 'pet_id' => $pet->pet_id,
                 'item_id' => $service->item_id,
                 'staff_id' => $user->user_id,
@@ -104,7 +104,7 @@ class SuDungSpaController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Đã ghi nhận dịch vụ Spa. Phí sẽ được cộng vào hóa đơn khi thanh toán.',
-                'data' => DB::table('spa_usages')->where('spa_usage_id', $usageId)->first(),
+                'data' => DB::table('luot_dich_vu_spa')->where('spa_usage_id', $usageId)->first(),
             ], 201);
         });
     }

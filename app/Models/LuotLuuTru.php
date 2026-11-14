@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ThuCungBoarding extends Model
+class LuotLuuTru extends Model
 {
-    protected $table = 'pet_boardings';
+    protected $table = 'luot_luu_tru';
     protected $primaryKey = 'id'; // Hoặc 'boarding_id' tùy theo file Migration của dự án
     public $timestamps = true;
 
@@ -35,6 +35,6 @@ class ThuCungBoarding extends Model
      */
     public function cage()
     {
-        return $this->belongsTo(Long::class, 'cage_id', 'cage_id');
+        return $this->belongsTo(LongNuoi::class, 'cage_id', 'cage_id');
     }
 }

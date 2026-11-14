@@ -19,7 +19,6 @@ class ThuCung extends Model
         'giong',
         'gioitinh',
         'ngaysinh',
-        'qr_code',
         'trangthai',
         'ngaytao',
     ];

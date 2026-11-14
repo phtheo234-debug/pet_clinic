@@ -140,10 +140,15 @@ class ThuCungController extends Controller
     {
         $invoiceIds = DB::table('hoa_don')->where('pet_id', $petId)->pluck('invoice_id');
         $recordIds = DB::table('phieu_kham')->where('pet_id', $petId)->pluck('record_id');
+        $prescriptionIds = DB::table('don_thuoc')->whereIn('record_id', $recordIds)->pluck('prescription_id');
 
         // Các bảng phụ có khóa ngoại RESTRICT phải được xóa trước dữ liệu cha.
         DB::table('yeu_cau_luu_tru')->where('pet_id', $petId)->delete();
-        DB::table('chi_tiet_hoa_don')->whereIn('invoice_id', $invoiceIds)->delete();
+        DB::table('chi_tiet_hoa_don')
+            ->where(function ($query) use ($invoiceIds, $prescriptionIds) {
+                $query->whereIn('invoice_id', $invoiceIds)
+                    ->orWhereIn('prescription_id', $prescriptionIds);
+            })->delete();
         DB::table('don_thuoc')->whereIn('record_id', $recordIds)->delete();
         DB::table('luot_dich_vu_spa')->where('pet_id', $petId)->delete();
         DB::table('hang_doi_kham')->where('pet_id', $petId)->delete();

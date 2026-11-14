@@ -41,6 +41,10 @@ jobs:
               b"shutil.copytree(SOURCE, TARGET, dirs_exist_ok=True)",
               b'shutil.copytree(SOURCE, TARGET, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", ".github"))'
           )
+          source = source.replace(
+              b'for path in list(migration_dir.glob("2026_*.php")):\n    path.unlink()',
+              b'for path in list(migration_dir.glob("2026_*.php")):\n    if path.name != "2026_11_05_034403_create_personal_access_tokens_table.php":\n        path.unlink()'
+          )
           Path('/tmp/chuyen_doi_du_an.py').write_bytes(source)
           PY
           python /tmp/chuyen_doi_du_an.py /tmp/PET-CLINIC .
@@ -68,6 +72,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "Tao moi ma nguon Pet Clinic va migrations"
+            git commit -m "Giu migration Sanctum va lam moi schema"
             git push origin main
           fi

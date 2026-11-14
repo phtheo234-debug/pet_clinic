@@ -147,8 +147,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ho_ten: document.getElementById("newName").value.trim(),
                     email: document.getElementById("newEmail").value.trim(),
                     phone: document.getElementById("newPhone").value.trim(),
-                    vaitro: document.getElementById("newRole").value,
-                    mat_khau_tam: document.getElementById("newTempPassword").value
+                    vaitro: document.getElementById("newRole").value
                 })
             });
             $("#createUserModal").modal("hide");

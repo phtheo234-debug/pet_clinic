@@ -93,16 +93,67 @@ class ThuCungController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Cập nhật thông tin chủ nuôi thành công.']);
     }
 
-    /** Chỉ xóa chủ nuôi khi không còn thú cưng liên kết. */
+    /**
+     * Xóa chủ nuôi và toàn bộ dữ liệu của các thú cưng thuộc chủ nuôi đó.
+     * Chặn thao tác nếu còn thú cưng đang nội trú để tránh sai lệch số lượng lồng.
+     */
     public function destroyOwner($id)
     {
-        $owner = DB::table('chu_nuoi')->where('owner_id', $id)->first();
-        abort_if(!$owner, 404, 'Không tìm thấy chủ nuôi.');
-        if (DB::table('thu_cung')->where('owner_id', $id)->exists()) {
-            return response()->json(['status' => 'error', 'message' => 'Không thể xóa chủ nuôi đang có hồ sơ thú cưng. Hãy chuyển hoặc xóa các hồ sơ liên quan trước.'], 409);
+        try {
+            return DB::transaction(function () use ($id) {
+                $owner = DB::table('chu_nuoi')->where('owner_id', $id)->lockForUpdate()->first();
+                abort_if(!$owner, 404, 'Không tìm thấy chủ nuôi.');
+
+                $pets = DB::table('thu_cung')->where('owner_id', $id)->lockForUpdate()->get(['pet_id', 'cage_id']);
+                if ($pets->contains(fn ($pet) => !is_null($pet->cage_id))) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Không thể xóa chủ nuôi vì còn thú cưng đang nội trú. Hãy làm thủ tục xuất viện trước.',
+                    ], 409);
+                }
+
+                foreach ($pets as $pet) {
+                    $this->deletePetRelatedData($pet->pet_id);
+                }
+
+                DB::table('chu_nuoi')->where('owner_id', $id)->delete();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Đã xóa chủ nuôi ' . $owner->ho_ten . ', ' . $pets->count() . ' hồ sơ thú cưng và toàn bộ dữ liệu liên quan.',
+                    'deleted_pet_count' => $pets->count(),
+                ]);
+            });
+        } catch (QueryException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không thể xóa chủ nuôi do dữ liệu vẫn đang được sử dụng ở chức năng khác.',
+            ], 409);
         }
-        DB::table('chu_nuoi')->where('owner_id', $id)->delete();
-        return response()->json(['status' => 'success', 'message' => 'Đã xóa chủ nuôi thành công.']);
+    }
+
+    /**
+     * Xóa dữ liệu nghiệp vụ gắn với một thú cưng theo đúng thứ tự khóa ngoại.
+     * Chỉ gọi bên trong transaction.
+     */
+    private function deletePetRelatedData($petId): void
+    {
+        $invoiceIds = DB::table('hoa_don')->where('pet_id', $petId)->pluck('invoice_id');
+        $recordIds = DB::table('phieu_kham')->where('pet_id', $petId)->pluck('record_id');
+
+        // Các bảng phụ có khóa ngoại RESTRICT phải được xóa trước dữ liệu cha.
+        DB::table('yeu_cau_luu_tru')->where('pet_id', $petId)->delete();
+        DB::table('chi_tiet_hoa_don')->whereIn('invoice_id', $invoiceIds)->delete();
+        DB::table('don_thuoc')->whereIn('record_id', $recordIds)->delete();
+        DB::table('luot_dich_vu_spa')->where('pet_id', $petId)->delete();
+        DB::table('hang_doi_kham')->where('pet_id', $petId)->delete();
+
+        DB::table('phieu_kham')->where('pet_id', $petId)->delete();
+        DB::table('luot_luu_tru')->where('pet_id', $petId)->delete();
+        DB::table('lich_su_tiem_chung')->where('pet_id', $petId)->delete();
+        DB::table('lich_su_can_nang')->where('pet_id', $petId)->delete();
+        DB::table('hoa_don')->where('pet_id', $petId)->delete();
+        DB::table('thu_cung')->where('pet_id', $petId)->delete();
     }
     /** Danh sách chủ nuôi dùng cho bảng quản lý và dropdown. */
     public function owners()
@@ -356,29 +407,43 @@ class ThuCungController extends Controller
         }
     }
 
+    /** Quản trị viên xóa thú cưng và toàn bộ dữ liệu nghiệp vụ liên quan. */
     public function destroy($id)
     {
-        $pet = $this->findOrFail($id);
-
-        if ($pet->cage_id) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Thú cưng đang nội trú. Hãy làm thủ tục thanh toán và xuất viện trước.'
-            ], 409);
-        }
-
         try {
-            DB::table('thu_cung')->where('pet_id', $id)->delete();
+            return DB::transaction(function () use ($id) {
+                $pet = DB::table('thu_cung')->where('pet_id', $id)->lockForUpdate()->first();
+                abort_if(!$pet, 404, 'Không tìm thấy thú cưng.');
+
+                if ($pet->cage_id) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Thú cưng đang nội trú. Hãy làm thủ tục thanh toán và xuất viện trước khi xóa.',
+                    ], 409);
+                }
+
+                $ownerId = $pet->owner_id;
+                $this->deletePetRelatedData($id);
+
+                $ownerDeleted = false;
+                if (!DB::table('thu_cung')->where('owner_id', $ownerId)->exists()) {
+                    DB::table('chu_nuoi')->where('owner_id', $ownerId)->delete();
+                    $ownerDeleted = true;
+                }
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => $ownerDeleted
+                        ? 'Đã xóa thú cưng và toàn bộ dữ liệu liên quan. Chủ nuôi cũng được tự động xóa vì không còn thú cưng nào.'
+                        : 'Đã xóa thú cưng và toàn bộ dữ liệu liên quan. Các thú cưng khác và hồ sơ chủ nuôi vẫn được giữ nguyên.',
+                    'owner_deleted' => $ownerDeleted,
+                ]);
+            });
         } catch (QueryException $e) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Không thể xóa: thú cưng đã có hồ sơ khám hoặc hóa đơn.'
+                'status' => 'error',
+                'message' => 'Không thể xóa do dữ liệu thú cưng vẫn đang được liên kết ở chức năng khác.',
             ], 409);
         }
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Đã xóa hồ sơ thú cưng thành công!'
-        ], 200);
     }
 }

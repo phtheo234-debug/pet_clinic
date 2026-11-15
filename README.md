@@ -48,8 +48,16 @@ Ten file va class do du an tao duoc doi sang tieng Viet khong dau. Ten bat buoc 
 - Yeu cau kham duoc dua vao `hang_doi_kham`; `created_by` cho phep NULL de phan biet lich hen tu khach hang voi luot do nhan vien tiep nhan.
 - Tra cuu lich hen bang so dien thoai; neu co nhieu lich, khach chon lich can xem. Chi lich dang cho xac nhan moi duoc chinh sua truc tuyen.
 - Ngay hen va ngay doi lich phai tu ngay hom sau tro di; backend tu kiem tra, khong chi gioi han tren giao dien.
-- Nhan vien/le tan va quan tri xem, xac nhan, huy lich tai `/appointments`; co the hoan tat sau khi ca kham da o trang thai `DA_KHAM` hoac sau khi hoan tat dich vu Spa.
+- Yeu cau dat lich van duoc luu trong `lich_hen_khach`; khong con trang quan ly lich hen rieng trong khu vuc noi bo.
 - Danh muc Spa tren trang khach hang lay truc tiep tu cac mat hang co `danhmuc = DICH_VU_SPA` trong `kho_hang`.
+
+## Ho so chu nuoi va thu cung
+
+- Trang `/pets` hien thi danh sach ho so thu cung, tim kiem theo so dien thoai va goi y so dien thoai da co.
+- Form tiep nhan co tuy chon `Kham benh`; neu tich, he thong tu tao luot `CHO_KHAM`, ghi chu tiep nhan la tuy chon.
+- Trang thai kham duoc dong bo tu hang doi: `KHONG_KHAM`, `CHO_KHAM`, `DANG_KHAM`, `DA_KHAM`; trang thai trong chi tiet chi doc.
+- Ho so chu nuoi/thu cung khong co chuc nang sua/xoa; cap nhat can nang chi them mot dong vao lich su can nang.
+- Ho so co lich hen kham con hieu luc duoc uu tien tren dau; ghi chu lich hen duoc hien truoc ghi chu tiep nhan.
 
 Sau khi cap nhat ma nguon, chay:
 

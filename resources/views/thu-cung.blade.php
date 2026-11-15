@@ -58,11 +58,11 @@
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label>Họ tên Chủ nuôi <span class="text-danger">*</span></label>
-                        <input type="text" id="ho_ten_chu" class="form-control" placeholder="VD: Nguyễn Văn An" required>
+                        <input type="text" id="ho_ten_chu" class="form-control" maxlength="100" placeholder="VD: Nguyễn Văn An" required>
                     </div>
                     <div class="form-group col-md-6">
                         <label>Số điện thoại <span class="text-danger">*</span></label>
-                        <input type="tel" id="phone" class="form-control" pattern="[0-9]{10,11}" placeholder="VD: 0987654321" required>
+                        <input type="tel" id="phone" class="form-control" pattern="[0-9]{10,11}" minlength="10" maxlength="11" placeholder="VD: 0987654321" required>
                     </div>
                     <div class="form-group col-md-6">
                         <label>Email Chủ nuôi <span class="text-muted">(không bắt buộc)</span></label>
@@ -80,7 +80,7 @@
                     </div>
                     <div class="form-group col-md-4">
                         <label>Tên Thú cưng <span class="text-danger">*</span></label>
-                        <input type="text" id="ten_thucung" class="form-control" placeholder="VD: Lu, Miu..." required>
+                        <input type="text" id="ten_thucung" class="form-control" maxlength="50" placeholder="VD: Lu, Miu..." required>
                     </div>
                     <div class="form-group col-md-4">
                         <label>Loài <span class="text-danger">*</span></label>
@@ -90,7 +90,7 @@
                 <div class="form-row">
                     <div class="form-group col-md-4">
                         <label>Giống</label>
-                        <input type="text" id="giong" class="form-control" placeholder="VD: Poodle">
+                        <input type="text" id="giong" class="form-control" maxlength="50" placeholder="VD: Poodle">
                     </div>
                     <div class="form-group col-md-4">
                         <label>Giới tính</label>

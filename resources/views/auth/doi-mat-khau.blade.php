@@ -64,6 +64,6 @@
         </div>
     </div>
     <script src="{{ asset('js/cau-hinh.js') }}"></script>
-    <script src="{{ asset('js/doi-mat-khau.js') }}"></script>
+    <script src="{{ asset('js/doi-mat-khau.js') }}?v=2"></script>
 </body>
 </html>

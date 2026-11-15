@@ -28,11 +28,11 @@ class ThuCungController extends Controller
             ->select('b1.pet_id', 'b1.ngay_hen', 'b1.gio_mong_muon', 'b1.ghi_chu_kham',
                 'b1.loai_dich_vu', 'b1.trang_thai as booking_status')
             ->whereIn('b1.loai_dich_vu', ['MEDICAL', 'BOTH'])
-            ->whereIn('b1.trang_thai', ['CHO_XAC_NHAN', 'DA_XAC_NHAN'])
+            ->where('b1.trang_thai', 'DA_XAC_NHAN')
             ->whereRaw('b1.id = (SELECT MAX(b2.id) FROM lich_hen_khach b2
                 WHERE b2.pet_id = b1.pet_id
                 AND b2.loai_dich_vu IN (\'MEDICAL\', \'BOTH\')
-                AND b2.trang_thai IN (\'CHO_XAC_NHAN\', \'DA_XAC_NHAN\'))');
+                AND b2.trang_thai = \'DA_XAC_NHAN\')');
 
         return DB::table('thu_cung')
             ->leftJoinSub($latestExam, 'latest_exam', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_exam.pet_id'); })

@@ -35,7 +35,7 @@ class QuanLyTaiKhoanController extends Controller
     /**
      * Sinh mật khẩu tạm ngẫu nhiên gồm chữ, số và ký tự đặc biệt.
      */
-    private function generateTemporaryPassword(string $username = ''): string
+    private function generateTemporaryPassword(?int $ignoreUserId = null): string
     {
         $letters = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
         $numbers = '23456789';
@@ -56,8 +56,7 @@ class QuanLyTaiKhoanController extends Controller
                 [$characters[$i], $characters[$j]] = [$characters[$j], $characters[$i]];
             }
             $password = implode('', $characters);
-        } while (($username !== '' && strcasecmp($password, $username) === 0)
-            || $this->conflictsWithOtherCredentials($password));
+        } while ($this->conflictsWithOtherCredentials($password, $ignoreUserId));
 
         return $password;
     }
@@ -235,7 +234,7 @@ class QuanLyTaiKhoanController extends Controller
     public function resetPassword(Request $request, $id)
     {
         $user = NguoiDung::findOrFail($id);
-        $temporaryPassword = $this->generateTemporaryPassword($user->username);
+        $temporaryPassword = $this->generateTemporaryPassword((int) $user->user_id);
         $user->mat_khau = Hash::make($temporaryPassword);
         $user->phai_doimatkhau = true;
         $user->save();

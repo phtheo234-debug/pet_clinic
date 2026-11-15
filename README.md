@@ -32,9 +32,9 @@ Khong con tai khoan mau voi mat khau mac dinh. Sau khi migrate, chay `php artisa
 
 ## Co so du lieu
 
-Cac bang nghiep vu dung ten tieng Viet khong dau: `nguoi_dung`, `chu_nuoi`, `thu_cung`, `long_nuoi`, `luot_luu_tru`, `yeu_cau_luu_tru`, `phieu_kham`, `hang_doi_kham`, `lich_hen_khach`, `danh_muc_phau_thuat`, `kho_hang`, `lo_hang`, `don_thuoc`, `hoa_don`, `chi_tiet_hoa_don`, `luot_dich_vu_spa`, `loai_vac_xin`, `lich_su_tiem_chung`.
+Cac bang nghiep vu dung ten tieng Viet khong dau: `nguoi_dung`, `chu_nuoi`, `thu_cung`, `long_nuoi`, `luot_luu_tru`, `yeu_cau_luu_tru`, `phieu_kham`, `hang_doi_kham`, `lich_hen_khach`, `danh_muc_phau_thuat`, `kho_hang`, `don_thuoc`, `hoa_don`, `chi_tiet_hoa_don`, `luot_dich_vu_spa`, `loai_vac_xin`, `lich_su_tiem_chung`.
 
-Can nang hien tai duoc luu tai `thu_cung.cannang`; khong tao bang lich su can nang. Nguong canh bao ton kho la co dinh `<= 5` don vi; dich vu Spa khong quan ly so luong ton. Khong su dung cac cot cau hinh lieu `lieu_mg_kg`, `mg_moi_don_vi`.
+Can nang hien tai duoc luu tai `thu_cung.cannang`; khong tao bang lich su can nang. So luong ton cua thuoc, vac-xin, thuc an va do dung duoc luu truc tiep tai `kho_hang.soluongton`; khi ke don, su dung hoac ban hang, he thong kiem tra du ton va tru truc tiep so luong. Khong quan ly theo lo, khong luu so lo/ngay san xuat/han su dung va khong ap dung FEFO. Nguong canh bao ton kho co dinh `<= 5` don vi; dich vu Spa khong quan ly so luong ton. Khong su dung cac cot cau hinh lieu `lieu_mg_kg`, `mg_moi_don_vi`.
 
 Cac bang ha tang Laravel (`cache`, `jobs`, `sessions`, `personal_access_tokens`...) duoc giu lai de tuong thich cau hinh framework. Migration khong tu chen du lieu gia cho danh muc vac-xin, phau thuat, mat hang kho hoac tai khoan.
 

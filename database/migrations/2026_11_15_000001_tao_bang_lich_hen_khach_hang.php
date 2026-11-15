@@ -34,6 +34,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('lich_hen_khach');
+        DB::table('hang_doi_kham')->whereNull('created_by')->delete();
         Schema::table('hang_doi_kham', function (Blueprint $table) {
             $table->unsignedBigInteger('created_by')->nullable(false)->change();
         });

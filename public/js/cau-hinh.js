@@ -144,3 +144,121 @@ async function initPage() {
         adminNav.classList.remove('d-none');
     }
 }
+
+
+// Phân trang dùng chung cho các bảng danh sách trong hệ thống: tối đa 5 dòng/trang.
+(function initTablePagination() {
+    const PAGE_SIZE = 5;
+    const tableStates = new WeakMap();
+    let refreshQueued = false;
+
+    function buildPageNumbers(current, total) {
+        if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
+        const pages = new Set([1, total, current, current - 1, current + 1]);
+        const sorted = [...pages].filter(page => page >= 1 && page <= total).sort((a, b) => a - b);
+        const result = [];
+        sorted.forEach((page, index) => {
+            if (index && page - sorted[index - 1] > 1) result.push("...");
+            result.push(page);
+        });
+        return result;
+    }
+
+    function renderPagination(tbody, rows, state, controls) {
+        const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+        state.page = Math.min(Math.max(state.page, 1), totalPages);
+        rows.forEach((row, index) => {
+            row.hidden = index < (state.page - 1) * PAGE_SIZE || index >= state.page * PAGE_SIZE;
+        });
+
+        controls.replaceChildren();
+        if (totalPages <= 1) {
+            controls.classList.add("d-none");
+            return;
+        }
+        controls.classList.remove("d-none");
+
+        const info = document.createElement("span");
+        info.className = "small text-muted mr-2";
+        info.textContent = "Trang " + state.page + "/" + totalPages + " · " + rows.length + " dòng";
+        controls.appendChild(info);
+
+        const addButton = (label, page, disabled = false, active = false) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "btn btn-sm " + (active ? "btn-primary" : "btn-outline-primary") + " mx-1";
+            button.textContent = label;
+            button.disabled = disabled;
+            button.setAttribute("aria-label", "Trang " + page);
+            button.addEventListener("click", () => {
+                state.page = page;
+                renderPagination(tbody, rows, state, controls);
+            });
+            controls.appendChild(button);
+        };
+
+        addButton("‹", state.page - 1, state.page === 1);
+        buildPageNumbers(state.page, totalPages).forEach(page => {
+            if (page === "...") {
+                const dots = document.createElement("span");
+                dots.className = "mx-1 text-muted";
+                dots.textContent = "...";
+                controls.appendChild(dots);
+            } else {
+                addButton(String(page), page, false, page === state.page);
+            }
+        });
+        addButton("›", state.page + 1, state.page === totalPages);
+    }
+
+    function paginateTable(tbody) {
+        if (!tbody || tbody.closest("[data-no-pagination]")) return;
+        const rows = Array.from(tbody.children).filter(row => row.tagName === "TR");
+        let state = tableStates.get(tbody);
+        if (!state) {
+            const controls = document.createElement("div");
+            controls.className = "pet-pagination d-flex flex-wrap align-items-center justify-content-end mt-2";
+            const table = tbody.closest("table");
+            const wrapper = table?.closest(".table-responsive") || table;
+            if (!wrapper || !wrapper.parentNode) return;
+            wrapper.insertAdjacentElement("afterend", controls);
+            state = { rows: [], page: 1, controls };
+            tableStates.set(tbody, state);
+        }
+
+        const changed = rows.length !== state.rows.length || rows.some((row, index) => row !== state.rows[index]);
+        if (changed) {
+            state.rows = rows;
+            state.page = 1;
+        }
+        renderPagination(tbody, rows, state, state.controls);
+    }
+
+    function refreshTables() {
+        refreshQueued = false;
+        document.querySelectorAll("table tbody").forEach(paginateTable);
+    }
+
+    function scheduleRefresh() {
+        if (refreshQueued) return;
+        refreshQueued = true;
+        window.setTimeout(refreshTables, 0);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", refreshTables, { once: true });
+    } else {
+        refreshTables();
+    }
+
+    const observer = new MutationObserver(mutations => {
+        const needsRefresh = mutations.some(mutation => {
+            if (mutation.target?.nodeType === 1 && mutation.target.closest("tbody")) return true;
+            return Array.from(mutation.addedNodes || []).some(node =>
+                node.nodeType === 1 && (node.matches?.("table") || node.querySelector?.("table"))
+            );
+        });
+        if (needsRefresh) scheduleRefresh();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+})();

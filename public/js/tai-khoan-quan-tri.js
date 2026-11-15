@@ -75,7 +75,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await loadUsers();
             } else if (button.dataset.action === "reset") {
                 document.getElementById("resetUserId").value = id;
-                document.getElementById("temporaryPassword").value = "";
                 document.getElementById("resetPasswordAlert").classList.add("d-none");
                 $("#resetPasswordModal").modal("show");
             } else {

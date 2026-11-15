@@ -99,6 +99,12 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
     Route::post('/boarding/requests/{id}/confirm', [LuuTruController::class, 'confirmRequest'])
         ->middleware('role:QUAN_TRI,NHAN_VIEN');
 
+    // Quản lý lịch hẹn trực tuyến của khách hàng.
+    Route::middleware('role:QUAN_TRI,NHAN_VIEN')->group(function () {
+        Route::get('/appointments', [KhachHangController::class, 'danhSachLichHen']);
+        Route::patch('/appointments/{id}/status', [KhachHangController::class, 'capNhatTrangThai']);
+    });
+
     // Ghi nhận Spa và thanh toán thuộc nghiệp vụ nhân viên/quản trị.
     Route::get('/spa/usages', [SuDungDichVuSpaController::class, 'index'])->middleware('role:QUAN_TRI,NHAN_VIEN');
     Route::post('/spa/usages', [SuDungDichVuSpaController::class, 'store'])->middleware('role:QUAN_TRI,NHAN_VIEN');

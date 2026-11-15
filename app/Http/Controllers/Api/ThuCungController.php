@@ -296,20 +296,9 @@ class ThuCungController extends Controller
                     $existingOwner = DB::table('chu_nuoi')->where('phone', $phone)->first();
 
                     if ($existingOwner) {
+                        // Số điện thoại là khóa nhận diện chủ nuôi; hồ sơ đã có thì chỉ liên kết,
+                        // tuyệt đối không ghi đè thông tin chủ nuôi từ form tiếp nhận thú cưng.
                         $ownerId = $existingOwner->owner_id;
-
-                        // Cập nhật email/địa chỉ nếu người tiếp nhận có nhập thông tin mới.
-                        // Nếu để trống, giữ nguyên dữ liệu đã lưu của chủ nuôi.
-                        $ownerUpdate = [];
-                        if (!empty($v['email'])) {
-                            $ownerUpdate['email'] = trim($v['email']);
-                        }
-                        if (!empty($v['diachi'])) {
-                            $ownerUpdate['diachi'] = trim($v['diachi']);
-                        }
-                        if ($ownerUpdate) {
-                            DB::table('chu_nuoi')->where('owner_id', $ownerId)->update($ownerUpdate);
-                        }
                     } else {
                         $ownerId = DB::table('chu_nuoi')->insertGetId([
                             'ho_ten'  => trim($v['ho_ten']),

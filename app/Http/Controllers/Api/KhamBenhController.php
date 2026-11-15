@@ -246,14 +246,17 @@ class KhamBenhController extends Controller
 
                 DB::table('thu_cung')->where('pet_id', $fields['pet_id'])->update(['cannang' => $fields['cannangkhi_kham']]);
 
-                // Chọn thuốc/vắc-xin từ kho và trừ tồn theo FEFO ngay khi lưu phiếu khám.
+                // Trừ trực tiếp số lượng thuốc/vắc-xin trong kho khi lưu phiếu khám.
                 foreach (($huongXuLy === 'TRANSFER' ? [] : ($fields['items'] ?? [])) as $usedItem) {
                     $inventoryItem = DB::table('kho_hang')->where('item_id', $usedItem['item_id'])->lockForUpdate()->first();
                     if (!$inventoryItem || !in_array($inventoryItem->danhmuc, ['THUOC', 'VAC_XIN'], true)) {
                         throw new Exception('Chỉ được sử dụng thuốc hoặc vắc-xin có trong danh mục kho.');
                     }
                     $quantity = (int) $usedItem['soluong'];
-                    $this->kho_hang->fefoDeduct((int) $inventoryItem->item_id, $quantity);
+                    if ((int) $inventoryItem->soluongton < $quantity) {
+                        throw new Exception('Không đủ tồn kho cho mặt hàng: ' . $inventoryItem->ten_sanpham);
+                    }
+                    DB::table('kho_hang')->where('item_id', $inventoryItem->item_id)->decrement('soluongton', $quantity);
                     DB::table('don_thuoc')->insert([
                         'record_id' => $recordId, 'item_id' => $inventoryItem->item_id,
                         'soluong' => $quantity, 'huongdan' => $usedItem['huongdan'] ?? null,
@@ -439,7 +442,7 @@ class KhamBenhController extends Controller
         return response()->json(['status' => 'success', 'data' => $record]);
     }
     /**
-     * Kê don theo so luong bac si chi dinh va tu dong xuat kho FEFO
+     * Kê đơn theo số lượng bác sĩ chỉ định và trừ trực tiếp tồn kho
      */
     public function createPrescription(Request $request)
     {
@@ -473,7 +476,10 @@ class KhamBenhController extends Controller
 
                 $totalUnits = (int) $request->soluong;
 
-                $deductions = $this->kho_hang->fefoDeduct((int) $item->item_id, $totalUnits);
+                if ((int) $item->soluongton < $totalUnits) {
+                    throw new Exception('Không đủ tồn kho thuốc: ' . $item->ten_sanpham);
+                }
+                DB::table('kho_hang')->where('item_id', $item->item_id)->decrement('soluongton', $totalUnits);
 
                 $prescriptionId = DB::table('don_thuoc')->insertGetId([
                     'record_id' => $record->record_id,
@@ -488,7 +494,7 @@ class KhamBenhController extends Controller
                     'data'    => [
                         'prescription_id' => $prescriptionId,
                         'total_units'     => $totalUnits,
-                        'fefo_deductions' => $deductions,
+                        'remaining_stock' => (int) DB::table('kho_hang')->where('item_id', $item->item_id)->value('soluongton'),
                     ],
                 ], 200);
             });

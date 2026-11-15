@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ThanhToanController;
 use App\Http\Controllers\Api\SuDungDichVuSpaController;
 use App\Http\Controllers\Api\PhauThuatController;
 use App\Http\Controllers\Api\TiemChungController;
+use App\Http\Controllers\KhachHangController;
 
 /*
 |--------------------------------------------------------------------------

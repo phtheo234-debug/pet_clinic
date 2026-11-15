@@ -865,7 +865,7 @@ class ThanhToanController extends Controller
                     ->orderBy('check_in')
                     ->lockForUpdate()
                     ->get(['id', 'cage_id', 'check_in', 'check_out', 'status']);
-                $rateMap = ['THUONG'=>50000, 'CAP_CUU_ICU'=>80000, 'CACH_LY'=>100000];
+                $rateMap = ['THUONG'=>50000, 'CAP_CUU_ICU'=>50000, 'CACH_LY'=>50000];
                 $activeBoarding = null;
                 foreach ($boardingRows as $stay) {
                     $checkIn = Carbon::parse($stay->check_in);

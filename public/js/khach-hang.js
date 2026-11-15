@@ -173,7 +173,7 @@ function renderLookupResults() {
         '</strong> · ' + esc(booking.ten_thucung) + '<br><small class="text-muted">' +
         esc(booking.ngay_hen) + ' · ' + (booking.ca_hen === 'SANG' ? 'Ca sáng' : 'Ca chiều') +
         ' · ' + esc(({MEDICAL:'Khám bệnh', SPA:'Dịch vụ Spa', BOTH:'Dịch vụ Spa và Khám bệnh'})[booking.loai_dich_vu] || booking.loai_dich_vu) +
-        ' · ' + esc(booking.trang_thai) + '</small></div><button type="button" class="btn btn-sm btn-outline-primary" data-select-booking="' +
+        ' · ' + esc(({DA_XAC_NHAN:'Đã xác nhận',DA_HOAN_THANH:'Đã hoàn thành',DA_HUY:'Đã hủy'})[booking.trang_thai] || booking.trang_thai) + '</small></div><button type="button" class="btn btn-sm btn-outline-primary" data-select-booking="' +
         Number(booking.id) + '">Xem thông tin</button></div>'
     ).join('');
 

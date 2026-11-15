@@ -11,6 +11,28 @@ use Illuminate\Support\Facades\Mail;
 
 class XacThucController extends Controller
 {
+    /**
+     * Không cho một tài khoản dùng tên đăng nhập/mật khẩu đã thuộc tài khoản khác.
+     */
+    private function conflictsWithOtherCredentials(string $value, ?int $ignoreUserId = null): bool
+    {
+        $accounts = NguoiDung::select('user_id', 'username', 'mat_khau')->get();
+
+        foreach ($accounts as $account) {
+            if ($ignoreUserId !== null && (int) $account->user_id === $ignoreUserId) {
+                continue;
+            }
+
+            if (strcasecmp($value, (string) $account->username) === 0
+                || Hash::check($value, $account->mat_khau)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     public function login(Request $request)
     {
         $fields = $request->validate([
@@ -101,10 +123,10 @@ class XacThucController extends Controller
             ], 422);
         }
 
-        if (strcasecmp($fields['mat_khau_moi'], $user->username) === 0) {
+        if ($this->conflictsWithOtherCredentials($fields['mat_khau_moi'], (int) $user->user_id)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Mật khẩu không được trùng với tên đăng nhập.',
+                'message' => 'Mật khẩu này đã được một tài khoản khác sử dụng làm tên đăng nhập hoặc mật khẩu. Vui lòng chọn mật khẩu khác.',
             ], 422);
         }
 
@@ -160,10 +182,10 @@ class XacThucController extends Controller
 
         $user = $request->user();
 
-        if (strcasecmp($fields['mat_khau_moi'], $user->username) === 0) {
+        if ($this->conflictsWithOtherCredentials($fields['mat_khau_moi'], (int) $user->user_id)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Mật khẩu không được trùng với tên đăng nhập.',
+                'message' => 'Mật khẩu này đã được một tài khoản khác sử dụng làm tên đăng nhập hoặc mật khẩu. Vui lòng chọn mật khẩu khác.',
             ], 422);
         }
 

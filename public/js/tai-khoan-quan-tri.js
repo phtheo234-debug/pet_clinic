@@ -119,11 +119,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         const id = document.getElementById("resetUserId").value;
         const resetAlert = document.getElementById("resetPasswordAlert");
         try {
-            await apiRequest(`/admin/users/${id}/reset-password`, {
-                method: "PUT", body: JSON.stringify({ mat_khau_tam: temporaryPassword })
+            const result = await apiRequest(`/admin/users/${id}/reset-password`, {
+                method: "PUT"
             });
-            $("#resetPasswordModal").modal("hide");
-            notify("Đã cấp lại mật khẩu tạm. Người dùng sẽ phải đổi mật khẩu khi đăng nhập.", true);
+            const generatedPassword = result.data?.mat_khau_tam || "";
+            resetAlert.textContent = "Mật khẩu tạm mới: " + generatedPassword + ". Hãy sao chép và gửi bảo mật cho người dùng; mật khẩu chỉ hiển thị lần này.";
+            resetAlert.className = "alert alert-success";
+            notify("Đã cấp lại mật khẩu. Người dùng sẽ phải đổi mật khẩu khi đăng nhập.", true);
             await loadUsers();
         } catch (error) {
             resetAlert.textContent = error.message;

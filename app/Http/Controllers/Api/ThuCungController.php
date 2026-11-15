@@ -20,12 +20,25 @@ class ThuCungController extends Controller
         $latestExam = DB::table('phieu_kham as mr1')->select('mr1.pet_id', 'mr1.record_id', 'mr1.trangthai as exam_status', 'mr1.ngaykham as exam_date', 'mr1.invoice_id as exam_invoice_id')->whereRaw('mr1.record_id = (SELECT MAX(mr2.record_id) FROM phieu_kham mr2 WHERE mr2.pet_id = mr1.pet_id)');
 
         $latestQueue = DB::table('hang_doi_kham as mq1')
-            ->select('mq1.pet_id', 'mq1.trangthai as queue_status', 'mq1.ghi_chu as queue_note')
+            ->select('mq1.pet_id', 'mq1.trangthai as queue_status', 'mq1.ghi_chu as queue_note',
+                'mq1.ghi_chu_tiep_nhan as intake_note', 'mq1.created_at as queue_created_at')
             ->whereRaw('mq1.queue_id = (SELECT MAX(mq2.queue_id) FROM hang_doi_kham mq2 WHERE mq2.pet_id = mq1.pet_id)');
+
+        // Lịch hẹn khám bệnh gần nhất còn hiệu lực được ưu tiên lên đầu danh sách hồ sơ.
+        $latestBooking = DB::table('lich_hen_khach as b1')
+            ->select('b1.pet_id', 'b1.ngay_hen', 'b1.gio_mong_muon', 'b1.ghi_chu_kham',
+                'b1.loai_dich_vu', 'b1.trang_thai as booking_status')
+            ->whereIn('b1.loai_dich_vu', ['MEDICAL', 'BOTH'])
+            ->whereIn('b1.trang_thai', ['CHO_XAC_NHAN', 'DA_XAC_NHAN'])
+            ->whereRaw('b1.id = (SELECT MAX(b2.id) FROM lich_hen_khach b2
+                WHERE b2.pet_id = b1.pet_id
+                AND b2.loai_dich_vu IN (\'MEDICAL\', \'BOTH\')
+                AND b2.trang_thai IN (\'CHO_XAC_NHAN\', \'DA_XAC_NHAN\'))');
 
         return DB::table('thu_cung')
             ->leftJoinSub($latestExam, 'latest_exam', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_exam.pet_id'); })
             ->leftJoinSub($latestQueue, 'latest_queue', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_queue.pet_id'); })
+            ->leftJoinSub($latestBooking, 'latest_booking', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_booking.pet_id'); })
             ->leftJoin('chu_nuoi', 'chu_nuoi.owner_id', '=', 'thu_cung.owner_id')
             ->leftJoinSub($latestWeight, 'latest_weight', function ($join) {
                 $join->on('thu_cung.pet_id', '=', 'latest_weight.pet_id');
@@ -36,7 +49,14 @@ class ThuCungController extends Controller
                 'chu_nuoi.phone as owner_phone',
                 'chu_nuoi.diachi as owner_address',
                 'chu_nuoi.email as owner_email',
-                'latest_weight.cannang as current_weight', 'latest_exam.record_id as record_id', 'latest_exam.exam_status as trangthai_kham', 'latest_exam.exam_date as ngaykham_gannhat', 'latest_exam.exam_invoice_id as mahoadon_kham', 'latest_queue.queue_status as queue_status', 'latest_queue.queue_note as queue_note'
+                'latest_weight.cannang as current_weight',
+                'latest_exam.record_id as record_id', 'latest_exam.exam_status as trangthai_kham',
+                'latest_exam.exam_date as ngaykham_gannhat', 'latest_exam.exam_invoice_id as mahoadon_kham',
+                'latest_queue.queue_status as queue_status', 'latest_queue.queue_note as queue_note',
+                'latest_queue.intake_note as intake_note', 'latest_queue.queue_created_at as queue_created_at',
+                'latest_booking.ngay_hen as booking_date', 'latest_booking.gio_mong_muon as booking_time',
+                'latest_booking.ghi_chu_kham as booking_note', 'latest_booking.loai_dich_vu as booking_service_type',
+                'latest_booking.booking_status as booking_status'
             );
     }
 
@@ -62,12 +82,21 @@ class ThuCungController extends Controller
             'cage_id'        => $p->cage_id,
             'trangthai' => $p->trangthai,
             'record_id' => $p->record_id ?? null,
-            'trangthai_kham' => ($p->queue_status ?? null) === 'DANG_KHAM' ? 'DANG_DIEU_TRI' : (($p->queue_status ?? null) === 'CHO_KHAM' ? 'CHUA_KHAM' : ($p->trangthai_kham ?? null)),
+            'trangthai_kham' => ($p->queue_status ?? null) === 'DANG_KHAM'
+                ? 'DANG_KHAM'
+                : (($p->queue_status ?? null) === 'CHO_KHAM'
+                    ? 'CHO_KHAM'
+                    : (($p->queue_status ?? null) === 'DA_KHAM' ? 'DA_KHAM' : 'KHONG_KHAM')),
             'ngaykham_gannhat' => $p->ngaykham_gannhat ?? null,
             'kham_da_thanh_toan' => !empty($p->mahoadon_kham),
             'trangthai_hangdoi' => $p->queue_status ?? null,
             'dang_cho_kham' => in_array($p->queue_status ?? null, ['CHO_KHAM', 'DANG_KHAM'], true),
             'ghi_chu_cho_kham' => $p->queue_note ?? null,
+            'ghi_chu_tiep_nhan' => $p->intake_note ?? null,
+            'ghi_chu_dat_lich' => $p->booking_note ?? null,
+            'ngay_hen_kham' => $p->booking_date ?? null,
+            'gio_hen_kham' => $p->booking_time ?? null,
+            'loai_dich_vu_dat_lich' => $p->booking_service_type ?? null,
             'owner'          => [
                 'id'    => $p->owner_id,
                 'name'  => $p->owner_name,
@@ -203,7 +232,15 @@ class ThuCungController extends Controller
 
     public function index()
     {
-        $thu_cung = $this->query()->orderByDesc('thu_cung.pet_id')->get();
+        $thu_cung = $this->query()
+            ->orderByRaw("CASE WHEN latest_booking.pet_id IS NOT NULL THEN 0 WHEN latest_queue.queue_status IN ('CHO_KHAM','DANG_KHAM','DA_KHAM') THEN 1 ELSE 2 END")
+            ->orderBy('latest_booking.ngay_hen')
+            ->orderBy('latest_booking.gio_mong_muon')
+            ->orderByRaw("CASE WHEN latest_queue.queue_status = 'DANG_KHAM' THEN 0 WHEN latest_queue.queue_status = 'CHO_KHAM' AND (NULLIF(TRIM(latest_queue.queue_note), '') IS NOT NULL OR NULLIF(TRIM(latest_queue.intake_note), '') IS NOT NULL) THEN 1 WHEN latest_queue.queue_status = 'CHO_KHAM' THEN 2 WHEN latest_queue.queue_status = 'DA_KHAM' THEN 3 ELSE 4 END")
+            ->orderBy('latest_queue.queue_created_at')
+            ->orderBy('thu_cung.ngaytao')
+            ->orderBy('thu_cung.pet_id')
+            ->get();
         return response()->json([
             'status' => 'success',
             'data'   => $thu_cung->map(fn ($p) => $this->format($p))->values()
@@ -295,7 +332,7 @@ class ThuCungController extends Controller
                 // 3. Tạo mã định danh duy nhất TC0001 (BR-01)
                 DB::table('thu_cung')->where('pet_id', $id)->update(['mathucung' => sprintf('TC%04d', $id)]);
 
-                // 4. Ghi nhận cân nặng khởi tạo vào lich_su_can_nang (BR-04)
+                // 4. Ghi nhận cân nặng khởi tạo vào lịch sử cân nặng.
                 DB::table('lich_su_can_nang')->insert([
                     'pet_id'  => $id,
                     'cannang' => $v['weight'],
@@ -303,6 +340,20 @@ class ThuCungController extends Controller
                     'nguoido' => $request->user()->user_id ?? 1,
                     'ghichu'  => 'Cân nặng khởi tạo hồ sơ',
                 ]);
+
+                // Chỉ tạo lượt khám khi nhân viên tích "Khám bệnh" lúc tiếp nhận.
+                if ($request->boolean('kham_benh')) {
+                    $note = trim((string) ($v['ghi_chu_kham'] ?? ''));
+                    DB::table('hang_doi_kham')->insert([
+                        'pet_id' => $id,
+                        'created_by' => $request->user()->user_id,
+                        'ghi_chu' => null,
+                        'ghi_chu_tiep_nhan' => $note !== '' ? $note : null,
+                        'trangthai' => 'CHO_KHAM',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
 
                 return response()->json([
                     'status'  => 'success',
@@ -339,77 +390,38 @@ class ThuCungController extends Controller
         ], 200);
     }
 
+    /**
+     * Chỉ ghi nhận cân nặng mới; không cho sửa thông tin hồ sơ chủ nuôi/thú cưng.
+     * Mỗi lần cân đo tạo thêm một dòng lịch sử, không ghi đè dữ liệu cũ.
+     */
     public function update(Request $request, $id)
     {
         $this->findOrFail($id);
 
-        // Bác sĩ chỉ được cập nhật cân nặng phục vụ theo dõi lâm sàng.
-        if (
-            $request->user()
-            && $request->user()->vaitro === 'BAC_SI'
-            && array_diff(array_keys($request->all()), ['weight'])
-        ) {
+        if (array_diff(array_keys($request->all()), ['weight'])) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Bác sĩ chỉ được cập nhật cân nặng của thú cưng tại chức năng này.',
+                'message' => 'Hồ sơ chủ nuôi và thú cưng là dữ liệu lưu trữ, không được chỉnh sửa tại chức năng này.',
             ], 403);
         }
 
         $v = $request->validate([
-            'owner_id'       => 'sometimes|integer|min:1|exists:chu_nuoi,owner_id',
-            'name'           => 'sometimes|string|max:50',
-            'species'        => 'sometimes|string|max:30',
-            'breed'          => 'sometimes|nullable|string|max:50',
-            'gender'         => 'sometimes|in:DUC,CAI,CHUA_XAC_DINH',
-            'dob'            => 'sometimes|nullable|date',
-            'weight'         => 'sometimes|numeric|min:0.1|max:999',
+            'weight' => 'required|numeric|min:0.1|max:999',
         ]);
 
-        try {
-            return DB::transaction(function () use ($request, $id, $v) {
-                $map = [
-                    'owner_id'       => 'owner_id',
-                    'name'           => 'ten_thucung',
-                    'species'        => 'loai',
-                    'breed'          => 'giong',
-                    'gender'         => 'gioitinh',
-                    'dob'            => 'ngaysinh',
-                ];
+        DB::table('lich_su_can_nang')->insert([
+            'pet_id' => $id,
+            'cannang' => $v['weight'],
+            'ngaydo' => now(),
+            'nguoido' => $request->user()->user_id ?? 1,
+            'ghichu' => 'Cập nhật cân nặng mới',
+        ]);
 
-                $data = [];
-                foreach ($map as $in => $col) {
-                    if (array_key_exists($in, $v)) {
-                        $data[$col] = $v[$in];
-                    }
-                }
-
-                if ($data) {
-                    DB::table('thu_cung')->where('pet_id', $id)->update($data);
-                }
-
-                // Nếu có cập nhật cân nặng -> Thêm bản ghi mới vào lich_su_can_nang (BR-04)
-                if (isset($v['weight'])) {
-                    DB::table('lich_su_can_nang')->insert([
-                        'pet_id'  => $id,
-                        'cannang' => $v['weight'],
-                        'ngaydo'  => now(),
-                        'nguoido' => $request->user()->user_id ?? 1,
-                        'ghichu'  => 'Cập nhật cân nặng mới',
-                    ]);
-                }
-
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Cập nhật hồ sơ thành công!',
-                    'data'    => $this->format($this->findOrFail($id))
-                ], 200);
-            });
-        } catch (Exception $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Lỗi cập nhật: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Đã ghi nhận cân nặng mới vào lịch sử.',
+            'data' => $this->format($this->findOrFail($id)),
+        ], 200);
     }
 
     /** Quản trị viên xóa thú cưng và toàn bộ dữ liệu nghiệp vụ liên quan. */

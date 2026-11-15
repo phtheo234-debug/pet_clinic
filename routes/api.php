@@ -68,6 +68,7 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         Route::get('/surgeries', [PhauThuatController::class, 'index']);
         Route::post('/surgeries', [PhauThuatController::class, 'store']);
         Route::put('/surgeries/{id}', [PhauThuatController::class, 'update']);
+        Route::put('/surgeries/{id}/toggle-status', [PhauThuatController::class, 'toggleStatus']);
         Route::delete('/surgeries/{id}', [PhauThuatController::class, 'destroy']);
 
         Route::post('/spa-services', [QuanLyDichVuSpaController::class, 'store']);

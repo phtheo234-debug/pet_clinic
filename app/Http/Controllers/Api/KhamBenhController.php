@@ -93,11 +93,13 @@ class KhamBenhController extends Controller
                     });
             })
             ->select(
-                'q.queue_id', 'q.pet_id', 'q.ghi_chu', 'q.trangthai as queue_status', 'q.created_at',
+                'q.queue_id', 'q.pet_id',
+                DB::raw("COALESCE(NULLIF(q.ghi_chu, ''), NULLIF(q.ghi_chu_tiep_nhan, '')) as ghi_chu"),
+                'q.ghi_chu_tiep_nhan', 'q.trangthai as queue_status', 'q.created_at',
                 'p.mathucung', 'p.ten_thucung', 'p.loai', 'p.giong',
                 'o.ho_ten as ten_chu_nuoi', 'o.phone as sdt_chu_nuoi'
             )
-            ->orderByRaw("CASE WHEN q.trangthai = 'DANG_KHAM' THEN 0 WHEN q.trangthai = 'CHO_KHAM' AND q.ghi_chu IS NOT NULL AND TRIM(q.ghi_chu) <> '' THEN 1 WHEN q.trangthai = 'CHO_KHAM' THEN 2 ELSE 3 END")
+            ->orderByRaw("CASE WHEN q.trangthai = 'DANG_KHAM' THEN 0 WHEN q.trangthai = 'CHO_KHAM' AND (NULLIF(TRIM(q.ghi_chu), '') IS NOT NULL OR NULLIF(TRIM(q.ghi_chu_tiep_nhan), '') IS NOT NULL) THEN 1 WHEN q.trangthai = 'CHO_KHAM' THEN 2 ELSE 3 END")
             ->orderBy('q.created_at')
             ->get();
 

@@ -405,7 +405,7 @@ class KhamBenhController extends Controller
         return response()->json(['status' => 'success', 'data' => $record]);
     }
     /**
-     * FR-MED-02: Kê đơn tính theo mg/kg và tự động xuất kho FEFO
+     * Kê don theo so luong bac si chi dinh va tu dong xuat kho FEFO
      */
     public function createPrescription(Request $request)
     {
@@ -413,8 +413,8 @@ class KhamBenhController extends Controller
             'pet_id'            => 'required|integer|exists:thu_cung,pet_id',
             'medical_record_id' => 'required|integer|exists:phieu_kham,record_id',
             'medicine_id'       => 'required|integer|exists:kho_hang,item_id',
-            'doses_per_day'     => 'required|integer|min:1',
-            'total_days'        => 'required|integer|min:1',
+            'soluong'           => 'required|integer|min:1',
+            'huongdan'          => 'required|string|max:1000',
         ]);
 
         try {
@@ -437,27 +437,7 @@ class KhamBenhController extends Controller
                     ], 422);
                 }
 
-                // Không tự lấy liều mặc định nếu thuốc chưa được cấu hình
-                if (
-                    $item->lieu_mg_kg === null ||
-                    $item->mg_moi_don_vi === null ||
-                    (float) $item->lieu_mg_kg <= 0 ||
-                    (float) $item->mg_moi_don_vi <= 0
-                ) {
-                    return response()->json([
-                        'status'  => 'error',
-                        'message' => 'Thuốc chưa được cấu hình liều mg/kg hoặc hàm lượng mg mỗi đơn vị. Vui lòng cập nhật kho trước khi kê đơn!'
-                    ], 422);
-                }
-
-                $weight = (float) $record->cannangkhi_kham;
-                $mgPerKg = (float) $item->lieu_mg_kg;
-                $mgPerUnit = (float) $item->mg_moi_don_vi;
-
-
-                $mgPerDose = $weight * $mgPerKg;
-                $unitsPerDose = $mgPerDose / $mgPerUnit;
-                $totalUnits = (int) ceil(round($unitsPerDose * $request->doses_per_day * $request->total_days, 6));
+                $totalUnits = (int) $request->soluong;
 
                 $deductions = $this->kho_hang->fefoDeduct((int) $item->item_id, $totalUnits);
 
@@ -465,8 +445,7 @@ class KhamBenhController extends Controller
                     'record_id' => $record->record_id,
                     'item_id'   => $item->item_id,
                     'soluong'   => $totalUnits,
-                    'huongdan'  => "{$request->doses_per_day} lần/ngày, mỗi lần " . round($unitsPerDose, 2)
-                        . " {$item->donvitinh} (liều " . round($mgPerDose, 1) . "mg), dùng {$request->total_days} ngày",
+                    'huongdan'  => trim($request->huongdan),
                 ]);
 
                 return response()->json([
@@ -474,7 +453,6 @@ class KhamBenhController extends Controller
                     'message' => 'Kê đơn thuốc thành công!',
                     'data'    => [
                         'prescription_id' => $prescriptionId,
-                        'dose_mg'         => round($mgPerDose, 1),
                         'total_units'     => $totalUnits,
                         'fefo_deductions' => $deductions,
                     ],

@@ -226,7 +226,7 @@ class ThanhToanController extends Controller
                         ->from('phieu_kham as mr')
                         ->whereColumn('mr.pet_id', 'p.pet_id')
                         ->whereNull('mr.invoice_id')
-                        ->where('mr.trangthai', '!=', 'CHUYEN_VIEN');
+                        ->where('mr.huong_xuly', '!=', 'TRANSFER');
                 })->orWhereExists(function ($sub) {
                     $sub->select(DB::raw(1))
                         ->from('don_thuoc as rx')
@@ -275,7 +275,7 @@ class ThanhToanController extends Controller
             ->join('thu_cung as p', 'p.pet_id', '=', 'mr.pet_id')
             ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
             ->whereNull('mr.invoice_id')
-            ->whereIn('mr.trangthai', ['CHUA_KHAM', 'DANG_DIEU_TRI'])
+            ->where('mr.huong_xuly', '!=', 'TRANSFER')
             ->where('p.trangthai', '!=', 'NOI_TRU')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
@@ -302,8 +302,8 @@ class ThanhToanController extends Controller
             if (!$record || $record->invoice_id) {
                 return response()->json(['status' => 'error', 'message' => 'Phiếu khám này đã được thanh toán hoặc không còn tồn tại.'], 422);
             }
-            if (!in_array($record->trangthai, ['CHUA_KHAM', 'DANG_DIEU_TRI'], true)) {
-                return response()->json(['status' => 'error', 'message' => 'Phiếu khám không ở trạng thái có thể thanh toán.'], 422);
+            if ($record->huong_xuly === 'TRANSFER') {
+                return response()->json(['status' => 'error', 'message' => 'Phiếu khám có kết luận chuyển viện, không thể thanh toán tại phòng khám này.'], 422);
             }
             $pet = DB::table('thu_cung')->where('pet_id', $record->pet_id)->lockForUpdate()->first();
             if (!$pet || $pet->trangthai === 'NOI_TRU') {
@@ -352,7 +352,7 @@ class ThanhToanController extends Controller
             if ($items->isNotEmpty()) {
                 DB::table('don_thuoc')->whereIn('prescription_id', $items->pluck('prescription_id'))->update(['invoice_id' => $invoiceId]);
             }
-            DB::table('phieu_kham')->where('record_id', $record->record_id)->update(['invoice_id' => $invoiceId, 'trangthai' => 'HOAN_THANH']);
+            DB::table('phieu_kham')->where('record_id', $record->record_id)->update(['invoice_id' => $invoiceId]);
             return response()->json(['status' => 'success', 'message' => 'Đã thanh toán lượt khám ngoại trú.', 'data' => [
                 'invoice_id' => $invoiceId, 'mahoadon' => $code, 'tien_kham' => $examFee,
                 'tien_thuoc' => $medicineTotal, 'tong_thanhtoan' => $examFee + $medicineTotal,
@@ -411,14 +411,14 @@ class ThanhToanController extends Controller
                 }
 
                 // Không cho xuất viện nếu đã có kết luận chuyển viện
-                if ($latestRecord->trangthai === 'CHUYEN_VIEN') {
+                if ($latestRecord->huong_xuly === 'TRANSFER') {
                     return response()->json([
                         'status'  => 'error',
                         'message' => 'Hồ sơ khám có kết luận chuyển viện. Không thể thực hiện xuất viện tại đây!'
                     ], 422);
                 }
 
-                // Thanh toán thành công sẽ tự động chốt các phiếu khám chưa lập hóa đơn thành HOAN_THANH.
+                // Thanh toán thành công sẽ đánh dấu hóa đơn cho các phiếu khám đủ điều kiện.
 
                 // 3. Kiểm tra thú cưng nội trú phải có lồng lưu trú
                 if (!$pet->cage_id) {
@@ -734,7 +734,7 @@ class ThanhToanController extends Controller
 
         // Bảng xem trước phải khớp với quy tắc thanh toán: mọi phiếu chưa lập hóa đơn,
         // trừ phiếu chuyển viện, sẽ được chốt hoàn thành khi thanh toán thành công.
-        $billableRecords = $records->reject(fn($r) => $r->trangthai === 'CHUYEN_VIEN');
+        $billableRecords = $records->reject(fn($r) => $r->huong_xuly === 'TRANSFER');
         $examCount = $billableRecords->count();
         $examFee = $examCount * 50000;
         $surgeryTotal = $billableRecords->sum(fn($r) => (float)($r->surgery_price ?? 0));

@@ -88,7 +88,9 @@
             const group = field.closest(".input-group");
             const anchor = group || field;
             const next = anchor.nextElementSibling;
-            if (!next || !next.matches(".form-text, .help-block, [data-field-guidance]")) {
+            const hasUsefulHint = next && next.matches(".form-text, .help-block, [data-field-guidance]") &&
+                !next.classList.contains("d-none") && Boolean(next.textContent.trim());
+            if (!hasUsefulHint) {
                 const note = document.createElement("small");
                 note.className = "form-text text-muted";
                 note.dataset.fieldGuidance = "1";

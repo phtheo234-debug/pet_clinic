@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\NguoiDung;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Hash;\nuse Illuminate\Validation\Rules\Regex;
 use Illuminate\Validation\Rule;
 
 class QuanLyTaiKhoanController extends Controller
@@ -145,6 +145,9 @@ class QuanLyTaiKhoanController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'vaitro' => ['required', Rule::in(['BAC_SI', 'NHAN_VIEN'])],
         ]);
+        if (Hash::check($fields['username'], $user->mat_khau)) {
+            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập không được trùng với mật khẩu của tài khoản. Vui lòng đổi mật khẩu trước hoặc chọn tên đăng nhập khác.'], 422);
+        }
         $user->fill($fields);
         $user->save();
         return response()->json(['status' => 'success', 'message' => 'Cập nhật tài khoản thành công.', 'data' => [
@@ -172,30 +175,20 @@ class QuanLyTaiKhoanController extends Controller
      */
     public function resetPassword(Request $request, $id)
     {
-        $fields = $request->validate([
-            'mat_khau_tam' => [
-                'required',
-                'string',
-                'min:6'
-            ]
-        ]);
-
         $user = NguoiDung::findOrFail($id);
-
-        $user->mat_khau = Hash::make($fields['mat_khau_tam']);
+        $temporaryPassword = $this->generateTemporaryPassword($user->username);
+        $user->mat_khau = Hash::make($temporaryPassword);
         $user->phai_doimatkhau = true;
         $user->save();
+        $user->tokens()->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Cấp lại mật khẩu tạm thời thành công.'
+            'message' => 'Cấp lại mật khẩu tạm thời thành công.',
+            'data' => ['mat_khau_tam' => $temporaryPassword],
         ]);
     }
 
-
-    /**
-     * Cập nhật trạng thái tài khoản.
-     */
     public function updateStatus(Request $request, $id)
     {
         $fields = $request->validate([

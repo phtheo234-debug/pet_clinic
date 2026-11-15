@@ -93,9 +93,8 @@ class KhamBenhController extends Controller
                     });
             })
             ->select(
-                'q.queue_id', 'q.pet_id',
-                DB::raw("COALESCE(NULLIF(q.ghi_chu, ''), NULLIF(q.ghi_chu_tiep_nhan, '')) as ghi_chu"),
-                'q.ghi_chu_tiep_nhan', 'q.trangthai as queue_status', 'q.created_at',
+                'q.queue_id', 'q.pet_id', 'q.ghi_chu', 'q.ghi_chu_tiep_nhan',
+                'q.trangthai as queue_status', 'q.created_at',
                 'p.mathucung', 'p.ten_thucung', 'p.loai', 'p.giong',
                 'o.ho_ten as ten_chu_nuoi', 'o.phone as sdt_chu_nuoi'
             )

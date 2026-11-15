@@ -89,7 +89,7 @@ class ThanhToanController extends Controller
 
     /**
      * POS bán lẻ độc lập: chỉ cần hồ sơ chủ nuôi và thú cưng, không yêu cầu phiếu khám.
-     * Bán hàng hóa kho thức ăn/đồ dùng theo FEFO; dịch vụ Spa không trừ tồn kho.
+     * Bán hàng hóa kho thức ăn/đồ dùng theo số lượng tồn trực tiếp; dịch vụ Spa không trừ tồn kho.
      */
     public function createRetailInvoice(Request $request)
     {
@@ -124,27 +124,10 @@ class ThanhToanController extends Controller
                         }
                         DB::table('kho_hang')->where('item_id', $item->item_id)->decrement('soluongton', $quantity);
                     } elseif ($item->danhmuc === 'THUC_AN') {
-                        $batches = DB::table('lo_hang')
-                            ->where('item_id', $item->item_id)
-                            ->where('trangthai', 'DANG_SU_DUNG')
-                            ->where('soluong', '>', 0)
-                            ->whereNotNull('ngayhethan')
-                            ->whereDate('ngayhethan', '>=', now()->toDateString())
-                            ->orderBy('ngayhethan')
-                            ->orderBy('batch_id')
-                            ->lockForUpdate()
-                            ->get();
-
-                        $remaining = $quantity;
-                        foreach ($batches as $batch) {
-                            if ($remaining <= 0) break;
-                            $take = min((int) $batch->soluong, $remaining);
-                            DB::table('lo_hang')->where('batch_id', $batch->batch_id)->decrement('soluong', $take);
-                            $remaining -= $take;
+                        if ((int) $item->soluongton < $quantity) {
+                            throw new Exception('Không đủ tồn kho thức ăn cho "' . $item->ten_sanpham . '". Còn ' . (int) $item->soluongton . '.');
                         }
-                        if ($remaining > 0) {
-                            throw new Exception('Không đủ tồn kho thức ăn còn hạn cho "' . $item->ten_sanpham . '". Thiếu ' . $remaining . '.');
-                        }
+                        DB::table('kho_hang')->where('item_id', $item->item_id)->decrement('soluongton', $quantity);
                     }
 
                     $lineTotal = $quantity * (float) $item->dongia;
@@ -904,18 +887,10 @@ class ThanhToanController extends Controller
                         if ((int)$item->soluongton < $qty) throw new Exception('Không đủ tồn kho: '.$item->ten_sanpham);
                         DB::table('kho_hang')->where('item_id',$item->item_id)->decrement('soluongton',$qty);
                     } elseif ($item->danhmuc === 'THUC_AN') {
-                        $batches = DB::table('lo_hang')->where('item_id',$item->item_id)
-                            ->where('trangthai','DANG_SU_DUNG')->where('soluong','>',0)
-                            ->whereNotNull('ngayhethan')->whereDate('ngayhethan','>=',now()->toDateString())
-                            ->orderBy('ngayhethan')->orderBy('batch_id')->lockForUpdate()->get();
-                        $left = $qty;
-                        foreach ($batches as $batch) {
-                            if ($left <= 0) break;
-                            $take = min((int)$batch->soluong,$left);
-                            DB::table('lo_hang')->where('batch_id',$batch->batch_id)->decrement('soluong',$take);
-                            $left -= $take;
+                        if ((int) $item->soluongton < $qty) {
+                            throw new Exception('Không đủ tồn kho thức ăn: ' . $item->ten_sanpham);
                         }
-                        if ($left > 0) throw new Exception('Không đủ tồn kho thức ăn còn hạn: '.$item->ten_sanpham);
+                        DB::table('kho_hang')->where('item_id', $item->item_id)->decrement('soluongton', $qty);
                     }
                     $detailRows[] = ['type'=>$item->danhmuc,'name'=>$item->ten_sanpham,'unit'=>$item->donvitinh,'qty'=>$qty,'price'=>(float)$item->dongia,'note'=>null];
                 }

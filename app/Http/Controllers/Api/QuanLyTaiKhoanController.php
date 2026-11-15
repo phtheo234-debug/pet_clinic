@@ -132,9 +132,11 @@ class QuanLyTaiKhoanController extends Controller
 
         ]);
 
+        $temporaryPassword = $this->generateTemporaryPassword($fields['username']);
+
         $user = NguoiDung::create([
             'username' => $fields['username'],
-            'mat_khau' => Hash::make('123456'),
+            'mat_khau' => Hash::make($temporaryPassword),
             'ho_ten' => $fields['ho_ten'],
             'email' => $fields['email'],
             'phone' => $fields['phone'] ?? null,
@@ -155,6 +157,7 @@ class QuanLyTaiKhoanController extends Controller
                 'phone' => $user->phone,
                 'vaitro' => $user->vaitro,
                 'trangthai' => $user->trangthai,
+                'mat_khau_tam' => $temporaryPassword,
             ]
         ], 201);
     }

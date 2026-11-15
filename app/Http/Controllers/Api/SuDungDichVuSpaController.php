@@ -105,7 +105,6 @@ class SuDungDichVuSpaController extends Controller
                 ->where('pet_id', $pet->pet_id)
                 ->whereIn('loai_dich_vu', ['SPA', 'BOTH'])
                 ->where('trang_thai', 'DA_XAC_NHAN')
-                ->whereDate('ngay_hen', '<=', now()->toDateString())
                 ->get();
 
             foreach ($bookings as $booking) {

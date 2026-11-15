@@ -75,11 +75,6 @@ class KhoController extends Controller
             'danhmuc'         => 'required|in:THUOC,VAC_XIN,THUC_AN,DO_DUNG,DICH_VU_SPA',
             'donvitinh'       => 'required|string|max:20',
             'dongia'          => 'required|numeric|min:0',
-            'tonkhotoithieu'  => 'nullable|integer|min:0',
-
-            // Cấu hình liều dùng, bắt buộc nếu là thuốc
-            'lieu_mg_kg'      => 'required_if:danhmuc,THUOC|nullable|numeric|gt:0',
-            'mg_moi_don_vi'   => 'required_if:danhmuc,THUOC|nullable|numeric|gt:0',
         ]);
 
 
@@ -87,11 +82,8 @@ class KhoController extends Controller
             'masanpham'       => $fields['masanpham'],
             'ten_sanpham'     => $fields['ten_sanpham'],
             'danhmuc'         => $fields['danhmuc'],
-            'lieu_mg_kg'    => $fields['lieu_mg_kg'] ?? null,
-            'mg_moi_don_vi' => $fields['mg_moi_don_vi'] ?? null,
             'donvitinh'       => $fields['donvitinh'],
             'dongia'          => $fields['dongia'],
-            'tonkhotoithieu' => $fields['tonkhotoithieu'] ?? 10,
         ]);
 
         return response()->json([

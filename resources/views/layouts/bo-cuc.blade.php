@@ -125,10 +125,6 @@
                 {{-- Nhân viên và quản trị viên --}}
                 @if(in_array($role, ['QUAN_TRI', 'NHAN_VIEN'], true))
 
-                    <li class="{{ request()->routeIs('lich-hen-khach') ? 'active' : '' }}">
-                        <a href="{{ route('lich-hen-khach') }}"><i class="fas fa-calendar-check"></i> Lịch hẹn khách hàng</a>
-                    </li>
-
                     <li class="{{ request()->routeIs('hoa-don') ? 'active' : '' }}">
                         <a href="{{ route('hoa-don') }}">
                             <i class="fas fa-file-invoice-dollar"></i>

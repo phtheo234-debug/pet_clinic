@@ -153,7 +153,6 @@ class KhamBenhController extends Controller
             'cannangkhi_kham' => 'required|numeric|min:0.1',
             'trieuchung' => 'nullable|string',
             'chandoan' => 'required|string',
-            'trangthai' => 'nullable|in:CHUA_KHAM,DANG_DIEU_TRI,HOAN_THANH,CHUYEN_VIEN',
             'huong_xuly' => 'nullable|in:OUTPATIENT,INPATIENT,SURGERY,TRANSFER',
             'yeu_cau_cach_ly' => 'nullable|boolean',
             'surgery_id' => 'nullable|required_if:huong_xuly,SURGERY|integer|exists:danh_muc_phau_thuat,surgery_id',
@@ -206,20 +205,13 @@ class KhamBenhController extends Controller
                     'trieuchung' => $fields['trieuchung'] ?? null,
                     'chandoan' => $fields['chandoan'],
                     'cannangkhi_kham' => $fields['cannangkhi_kham'],
-                    'trangthai' => $huongXuLy === 'TRANSFER' ? 'CHUYEN_VIEN' : ($queueInProgress ? 'DANG_DIEU_TRI' : 'CHUA_KHAM'),
                     'huong_xuly' => $huongXuLy,
                     'yeu_cau_cach_ly' => $needsIsolation,
                     'surgery_id' => $surgery->surgery_id ?? null,
                     'surgery_price' => $surgery->gia ?? null,
                 ]);
 
-                DB::table('lich_su_can_nang')->insert([
-                    'pet_id' => $fields['pet_id'],
-                    'cannang' => $fields['cannangkhi_kham'],
-                    'ngaydo' => now(),
-                    'nguoido' => $request->user()->user_id,
-                    'ghichu' => 'Ghi nhận từ phiếu khám bệnh #' . $recordId,
-                ]);
+                DB::table('thu_cung')->where('pet_id', $fields['pet_id'])->update(['cannang' => $fields['cannangkhi_kham']]);
 
                 // Chọn thuốc/vắc-xin từ kho và trừ tồn theo FEFO ngay khi lưu phiếu khám.
                 foreach (($huongXuLy === 'TRANSFER' ? [] : ($fields['items'] ?? [])) as $usedItem) {
@@ -322,7 +314,7 @@ class KhamBenhController extends Controller
                     }
                 }
 
-                $isTransfer = $fields['trangthai'] === 'CHUYEN_VIEN' || $huongXuLy === 'TRANSFER';
+                $isTransfer = $huongXuLy === 'TRANSFER';
 
                 // Nếu bác sĩ đổi chỉ định về ngoại trú, hủy yêu cầu lưu trú còn chờ.
                 if ($huongXuLy === 'OUTPATIENT' && !$isTransfer) {

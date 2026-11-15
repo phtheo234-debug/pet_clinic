@@ -91,8 +91,9 @@ return new class extends Migration
         Schema::create('hang_doi_kham', function (Blueprint $table) {
             $table->id('queue_id');
             $table->foreignId('pet_id')->constrained('thu_cung', 'pet_id');
-            $table->foreignId('created_by')->constrained('nguoi_dung', 'user_id');
+            $table->foreignId('created_by')->nullable()->constrained('nguoi_dung', 'user_id')->nullOnDelete();
             $table->text('ghi_chu')->nullable();
+            $table->text('ghi_chu_tiep_nhan')->nullable();
             $table->enum('trangthai', ['CHO_KHAM', 'DANG_KHAM', 'DA_KHAM'])->default('CHO_KHAM');
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->nullable();

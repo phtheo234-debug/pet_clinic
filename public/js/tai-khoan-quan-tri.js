@@ -132,8 +132,60 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    document.getElementById("createUserForm").addEventListener("submit", async (event) => {
+    const createForm = document.getElementById("createUserForm");
+    const createAlert = document.getElementById("createUserAlert");
+    const createFields = {
+        username: document.getElementById("newUsername"),
+        ho_ten: document.getElementById("newName"),
+        email: document.getElementById("newEmail"),
+        phone: document.getElementById("newPhone")
+    };
+    function clearCreateErrors() {
+        Object.values(createFields).forEach(input => {
+            input.classList.remove("is-invalid");
+            input.nextElementSibling?.classList.contains("form-text") && input.nextElementSibling.nextElementSibling?.classList.contains("invalid-feedback")
+                ? input.nextElementSibling.nextElementSibling.textContent = ""
+                : input.parentElement.querySelector(".invalid-feedback") && (input.parentElement.querySelector(".invalid-feedback").textContent = "");
+        });
+        createAlert.className = "alert d-none";
+        createAlert.textContent = "";
+    }
+    function showCreateError(field, message) {
+        const input = createFields[field];
+        if (!input) return;
+        input.classList.add("is-invalid");
+        const feedback = input.parentElement.querySelector(".invalid-feedback");
+        if (feedback) feedback.textContent = message;
+    }
+    Object.entries(createFields).forEach(([field, input]) => {
+        input.addEventListener("input", () => {
+            input.classList.remove("is-invalid");
+            const feedback = input.parentElement.querySelector(".invalid-feedback");
+            if (feedback) feedback.textContent = "";
+        });
+    });
+
+    createForm.addEventListener("submit", async (event) => {
         event.preventDefault();
+        clearCreateErrors();
+        const username = createFields.username.value.trim();
+        const name = createFields.ho_ten.value.trim();
+        const email = createFields.email.value.trim();
+        const phone = createFields.phone.value.trim();
+        let invalid = false;
+        if (!username) { showCreateError("username", "Vui lòng nhập tên đăng nhập."); invalid = true; }
+        else if (username.length > 50) { showCreateError("username", "Tên đăng nhập không được vượt quá 50 ký tự."); invalid = true; }
+        if (!name) { showCreateError("ho_ten", "Vui lòng nhập họ tên."); invalid = true; }
+        else if (name.length > 100) { showCreateError("ho_ten", "Họ tên không được vượt quá 100 ký tự."); invalid = true; }
+        if (!email) { showCreateError("email", "Vui lòng nhập email."); invalid = true; }
+        else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { showCreateError("email", "Email không đúng định dạng."); invalid = true; }
+        else if (email.length > 100) { showCreateError("email", "Email không được vượt quá 100 ký tự."); invalid = true; }
+        if (phone.length > 20) { showCreateError("phone", "Số điện thoại không được vượt quá 20 ký tự."); invalid = true; }
+        if (invalid) {
+            createAlert.textContent = "Vui lòng kiểm tra và sửa các thông tin được đánh dấu.";
+            createAlert.className = "alert alert-danger";
+            return;
+        }
         try {
             const result = await apiRequest("/admin/users", {
                 method: "POST",
@@ -150,7 +202,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             const generatedPassword = result.data?.mat_khau_tam || "";
             notify("Tạo tài khoản thành công. Mật khẩu tạm: " + generatedPassword + ". Hãy sao chép và gửi bảo mật cho người dùng; mật khẩu chỉ hiển thị lần này.", true);
             await loadUsers();
-        } catch (error) { notify(error.message); }
+        } catch (error) {
+            const message = error.message || "Không thể tạo tài khoản.";
+            const lower = message.toLowerCase();
+            let field = null;
+            if (lower.includes("username") || lower.includes("tên đăng nhập")) field = "username";
+            else if (lower.includes("email")) field = "email";
+            else if (lower.includes("phone") || lower.includes("điện thoại")) field = "phone";
+            else if (lower.includes("ho_ten") || lower.includes("họ tên")) field = "ho_ten";
+            if (field) showCreateError(field, message);
+            createAlert.textContent = message;
+            createAlert.className = "alert alert-danger";
+        }
     });
     await loadUsers();
 });

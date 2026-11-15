@@ -4,8 +4,6 @@
 @section('page_title', 'Quản lý các kho hàng & Dịch vụ')
 
 @section('content')
-<div id="inventoryExpiryNotice" class="mb-3"></div>
-
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <strong class="text-primary"><i class="fas fa-pills mr-1"></i>Kho thuốc</strong>
@@ -14,7 +12,7 @@
     <div class="card-body table-responsive">
         <div class="input-group input-group-sm mb-3 inventory-search" data-inventory-search="medical"><input type="text" class="form-control" id="searchInventory_medical" placeholder="Nhập tên hoặc mã thuốc cần tìm"><div class="input-group-append"><button type="button" class="btn btn-outline-primary" data-search-inventory="medical"><i class="fas fa-search mr-1"></i>Tìm kiếm</button></div></div>
         <table class="table table-hover mb-0">
-            <thead class="thead-light"><tr><th>Mã</th><th>Tên thuốc</th><th class="inventoryLotColumn">Số lô</th><th>Số lượng</th><th>Ngày sản xuất</th><th>Hạn sử dụng</th><th>Giá</th><th>Trạng thái</th><th class="inventoryActionHeader d-none">Thao tác</th></tr></thead>
+            <thead class="thead-light"><tr><th>Mã</th><th>Tên thuốc</th><th>Số lượng tồn</th><th>Giá</th><th>Trạng thái</th><th class="inventoryActionHeader d-none">Thao tác</th></tr></thead>
             <tbody id="medicalInventoryTableBody"></tbody>
         </table>
     </div>
@@ -28,7 +26,7 @@
     <div class="card-body table-responsive">
         <div class="input-group input-group-sm mb-3 inventory-search" data-inventory-search="vaccine"><input type="text" class="form-control" id="searchInventory_vaccine" placeholder="Nhập tên hoặc mã vắc-xin cần tìm"><div class="input-group-append"><button type="button" class="btn btn-outline-danger" data-search-inventory="vaccine"><i class="fas fa-search mr-1"></i>Tìm kiếm</button></div></div>
         <table class="table table-hover mb-0">
-            <thead class="thead-light"><tr><th>Mã</th><th>Tên vắc-xin</th><th class="inventoryLotColumn">Số lô</th><th>Số lượng</th><th>Ngày sản xuất</th><th>Hạn sử dụng</th><th>Giá</th><th>Trạng thái</th><th class="inventoryActionHeader d-none">Thao tác</th></tr></thead>
+            <thead class="thead-light"><tr><th>Mã</th><th>Tên vắc-xin</th><th>Số lượng tồn</th><th>Giá</th><th>Trạng thái</th><th class="inventoryActionHeader d-none">Thao tác</th></tr></thead>
             <tbody id="vaccineInventoryTableBody"></tbody>
         </table>
         <small class="form-text text-muted">Kho này chỉ quản lý vắc-xin tiêm phòng. Khi thêm vắc-xin tại đây, tên vắc-xin sẽ tự xuất hiện ở ô “Loại vắc-xin” trong màn hình khám bệnh.</small>
@@ -37,13 +35,13 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <strong class="text-success">Kho thức ăn (quản lý theo lô và hạn sử dụng)</strong>
+        <strong class="text-success">Kho thức ăn</strong>
         <button type="button" class="btn btn-success btn-sm d-none inventoryAddButton" onclick="openInventoryForm(null, 'THUC_AN')"><i class="fas fa-plus mr-1"></i>Thêm thức ăn</button>
     </div>
     <div class="card-body table-responsive">
         <div class="input-group input-group-sm mb-3 inventory-search" data-inventory-search="food"><input type="text" class="form-control" id="searchInventory_food" placeholder="Nhập tên hoặc mã thức ăn cần tìm"><div class="input-group-append"><button type="button" class="btn btn-outline-primary" data-search-inventory="food"><i class="fas fa-search mr-1"></i>Tìm kiếm</button></div></div>
         <table class="table table-hover mb-0">
-            <thead class="thead-light"><tr><th>Mã</th><th>Tên thức ăn</th><th class="inventoryLotColumn">Số lô</th><th>Số lượng</th><th>Ngày sản xuất</th><th>Hạn sử dụng</th><th>Giá</th><th>Trạng thái</th><th class="inventoryActionHeader d-none">Thao tác</th></tr></thead>
+            <thead class="thead-light"><tr><th>Mã</th><th>Tên thức ăn</th><th>Số lượng tồn</th><th>Giá</th><th>Trạng thái</th><th class="inventoryActionHeader d-none">Thao tác</th></tr></thead>
             <tbody id="foodInventoryTableBody"></tbody>
         </table>
     </div>
@@ -157,28 +155,11 @@
                         <div class="form-group col-md-6" id="inventoryStockGroup">
                             <label for="inventory_stock" id="inventoryStockLabel">Số lượng</label>
                             <input id="inventory_stock" type="number" class="form-control" min="0" step="1" value="0" required>
-                            <small class="form-text text-muted" id="inventoryStockHelp">Nhập số lượng ban đầu của mặt hàng.</small>
+                            <small class="form-text text-muted" id="inventoryStockHelp">Số lượng tồn được quản lý trực tiếp tại mặt hàng.</small>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="inventory_price">Giá (nghìn đồng)</label>
                             <input id="inventory_price" type="number" class="form-control" min="0" step="0.01" placeholder="Ví dụ: 10 = 10.000 VNĐ" required>
-                        </div>
-                        <div class="form-group col-md-6 d-none" id="inventoryBatchFields">
-                            <label for="inventory_lot_preview">Số lô tự động</label>
-                            <input id="inventory_lot_preview" class="form-control" readonly>
-                            <small class="form-text text-muted">Mã lô hiển thị tại đây sẽ được lưu đúng như vậy.</small>
-                        </div>
-                        <div class="form-group col-md-6 d-none" id="inventoryImportGroup">
-                            <label for="inventory_import_date">Ngày nhập</label>
-                            <input id="inventory_import_date" type="date" class="form-control">
-                        </div>
-                        <div class="form-group col-md-6 d-none" id="inventoryManufactureGroup">
-                            <label for="inventory_manufacture">Ngày sản xuất</label>
-                            <input id="inventory_manufacture" type="date" class="form-control">
-                        </div>
-                        <div class="form-group col-md-6 d-none" id="inventoryExpiryGroup">
-                            <label for="inventory_expiry">Hạn sử dụng</label>
-                            <input id="inventory_expiry" type="date" class="form-control">
                         </div>
                     </div>
 
@@ -190,49 +171,6 @@
             </form>
         </div>
     </div>
-</div>
-
-<div class="modal fade" id="inventoryBatchModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document"><div class="modal-content">
-        <form id="inventoryBatchForm">
-            <div class="modal-header">
-                <h5 class="modal-title">Nhập lô hàng</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="batch_item_id">
-                <p class="text-muted mb-3" id="batch_item_label"></p>
-                <div class="form-group">
-                    <label for="batch_lot_preview">Số lô tự động</label>
-                    <input id="batch_lot_preview" class="form-control" readonly>
-                    <small class="form-text text-muted">Mã lô hiển thị tại đây sẽ được lưu đúng như vậy.</small>
-                </div>
-                <div class="form-group">
-                    <label for="batch_quantity">Số lượng nhập</label>
-                    <input id="batch_quantity" type="number" class="form-control" min="1" step="1" required>
-                </div>
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="batch_import_date">Ngày nhập</label>
-                        <input id="batch_import_date" type="date" class="form-control" required>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label for="batch_manufacture_date">Ngày sản xuất</label>
-                        <input id="batch_manufacture_date" type="date" class="form-control" required>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label for="batch_expiry_date">Hạn sử dụng</label>
-                        <input id="batch_expiry_date" type="date" class="form-control" required>
-                    </div>
-                </div>
-                <small class="text-muted">Thuốc, vắc-xin và thức ăn cần ngày sản xuất và hạn sử dụng. Hệ thống xuất theo FEFO.</small>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
-                <button type="submit" id="btnSaveInventoryBatch" class="btn btn-primary">Xác nhận nhập lô</button>
-            </div>
-        </form>
-    </div></div>
 </div>
 
 @endsection

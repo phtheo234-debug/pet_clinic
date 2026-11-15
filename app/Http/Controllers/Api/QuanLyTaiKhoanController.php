@@ -138,7 +138,7 @@ class QuanLyTaiKhoanController extends Controller
             ],
 
             'phone' => [
-                'nullable',
+                'required',
                 'string',
                 'max:20',
                 'unique:nguoi_dung,phone'
@@ -196,7 +196,7 @@ class QuanLyTaiKhoanController extends Controller
             'username' => ['required', 'string', 'max:50', Rule::unique('nguoi_dung', 'username')->ignore($user->user_id, 'user_id')],
             'ho_ten' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:100', Rule::unique('nguoi_dung', 'email')->ignore($user->user_id, 'user_id')],
-            'phone' => ['nullable', 'string', 'max:20', Rule::unique('nguoi_dung', 'phone')->ignore($user->user_id, 'user_id')],
+            'phone' => ['required', 'string', 'max:20', Rule::unique('nguoi_dung', 'phone')->ignore($user->user_id, 'user_id')],
             'vaitro' => ['required', Rule::in(['BAC_SI', 'NHAN_VIEN'])],
         ]);
         $user->fill($fields);

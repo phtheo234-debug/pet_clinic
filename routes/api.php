@@ -76,13 +76,12 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         Route::delete('/spa-services/{id}', [QuanLyDichVuSpaController::class, 'destroy']);
     });
 
-    // Hồ sơ thú cưng: mọi vai trò được xem; nhân viên/quản trị tiếp nhận và xóa;
-    // cập nhật thông tin/cân nặng được phép cho cả bác sĩ.
+    // Hồ sơ thú cưng: mọi vai trò được xem; nhân viên/quản trị được tiếp nhận.
+    // Không sửa/xóa hồ sơ; PUT chỉ ghi thêm một lần cân nặng vào lịch sử.
     Route::get('/pets', [ThuCungController::class, 'index']);
     Route::get('/pets/{pet}', [ThuCungController::class, 'show']);
     Route::post('/pets', [ThuCungController::class, 'store'])->middleware('role:QUAN_TRI,NHAN_VIEN');
     Route::put('/pets/{pet}', [ThuCungController::class, 'update'])->middleware('role:QUAN_TRI,BAC_SI,NHAN_VIEN');
-    Route::patch('/pets/{pet}', [ThuCungController::class, 'update'])->middleware('role:QUAN_TRI,BAC_SI,NHAN_VIEN');
     Route::get('/owners', [ThuCungController::class, 'owners']);
 
     // Lịch tiêm chủng: xem lịch và lịch sử; ghi nhận tiêm được thực hiện cùng phiếu khám.

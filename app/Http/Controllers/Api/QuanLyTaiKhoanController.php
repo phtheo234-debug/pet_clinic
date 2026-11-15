@@ -158,7 +158,7 @@ class QuanLyTaiKhoanController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập này đang được dùng làm mật khẩu của tài khoản khác. Vui lòng chọn tên khác.'], 422);
         }
 
-        $temporaryPassword = $this->generateTemporaryPassword($fields['username']);
+        $temporaryPassword = $this->generateTemporaryPassword();
 
         $user = NguoiDung::create([
             'username' => $fields['username'],

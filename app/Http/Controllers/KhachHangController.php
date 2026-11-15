@@ -42,7 +42,7 @@ class KhachHangController extends Controller
             'gender'=>'nullable|in:DUC,CAI,CHUA_XAC_DINH',
             'dob'=>'nullable|date',
             'service_type'=>['required',Rule::in(['MEDICAL','SPA','BOTH'])],
-            'appointment_date'=>'required|date|after_or_equal:today',
+            'appointment_date'=>'required|date|after:tomorrow',
             'shift'=>['required',Rule::in(['SANG','CHIEU'])],
             'preferred_time'=>'required|date_format:H:i',
             'medical_note'=>'nullable|string|max:2000',
@@ -125,46 +125,97 @@ class KhachHangController extends Controller
 
     public function traCuu(Request $request)
     {
-        $data=$request->validate(['phone'=>'required|string|max:20','code'=>'required|string|max:30']);
-        $booking=DB::table('lich_hen_khach as b')->join('chu_nuoi as o','o.owner_id','=','b.owner_id')
-            ->join('thu_cung as p','p.pet_id','=','b.pet_id')->where('o.phone',trim($data['phone']))
-            ->where('b.ma_lich_hen',strtoupper(trim($data['code'])))
-            ->select('b.*','o.ho_ten as owner_name','o.phone','o.email','o.diachi','p.ten_thucung','p.loai','p.giong','p.pet_id')->first();
-        if (!$booking) return response()->json(['message'=>'Không tìm thấy lịch hẹn phù hợp với số điện thoại và mã lịch.'],404);
-        $booking->spa_services = json_decode($booking->dich_vu_spa,true) ?: [];
-        return response()->json(['status'=>'success','data'=>$booking]);
+        $data = $request->validate(['phone' => 'required|string|max:20']);
+        $bookings = DB::table('lich_hen_khach as b')
+            ->join('chu_nuoi as o', 'o.owner_id', '=', 'b.owner_id')
+            ->join('thu_cung as p', 'p.pet_id', '=', 'b.pet_id')
+            ->where('o.phone', trim($data['phone']))
+            ->select(
+                'b.*',
+                'o.ho_ten as owner_name', 'o.phone', 'o.email', 'o.diachi',
+                'p.ten_thucung', 'p.loai', 'p.giong', 'p.gioitinh', 'p.ngaysinh'
+            )
+            ->orderByDesc('b.created_at')
+            ->get();
+
+        if ($bookings->isEmpty()) {
+            return response()->json(['message' => 'Không tìm thấy lịch hẹn nào với số điện thoại này.'], 404);
+        }
+
+        foreach ($bookings as $booking) {
+            $booking->spa_services = json_decode($booking->dich_vu_spa, true) ?: [];
+            $booking->spa_service_names = $booking->spa_services
+                ? DB::table('kho_hang')->whereIn('item_id', $booking->spa_services)->pluck('ten_sanpham')->all()
+                : [];
+        }
+
+        return response()->json(['status' => 'success', 'data' => $bookings]);
     }
 
     public function capNhat(Request $request)
     {
-        $data=$request->validate([
-            'phone'=>'required|string|max:20','code'=>'required|string|max:30',
-            'appointment_date'=>'required|date|after_or_equal:today','shift'=>['required',Rule::in(['SANG','CHIEU'])],
-            'preferred_time'=>'required|date_format:H:i','medical_note'=>'nullable|string|max:2000',
-            'spa_services'=>'nullable|array','spa_services.*'=>'integer|distinct|exists:kho_hang,item_id'
+        $data = $request->validate([
+            'phone' => 'required|string|max:20',
+            'booking_id' => 'required|integer',
+            'appointment_date' => 'required|date|after:tomorrow',
+            'shift' => ['required', Rule::in(['SANG', 'CHIEU'])],
+            'preferred_time' => 'required|date_format:H:i',
+            'medical_note' => 'nullable|string|max:2000',
+            'spa_services' => 'nullable|array',
+            'spa_services.*' => 'integer|distinct|exists:kho_hang,item_id'
         ]);
-        $time=$data['preferred_time'];
-        if (($data['shift']==='SANG' && ($time<'07:00'||$time>'11:00')) || ($data['shift']==='CHIEU' && ($time<'14:00'||$time>'17:00')))
-            return response()->json(['message'=>'Giờ mong muốn không nằm trong ca đã chọn.'],422);
-        $booking=DB::table('lich_hen_khach as b')->join('chu_nuoi as o','o.owner_id','=','b.owner_id')
-            ->where('o.phone',trim($data['phone']))->where('b.ma_lich_hen',strtoupper(trim($data['code'])))
-            ->select('b.*')->first();
-        if (!$booking) return response()->json(['message'=>'Không tìm thấy lịch hẹn.'],404);
-        if ($booking->trang_thai!=='CHO_XAC_NHAN') return response()->json(['message'=>'Lịch hẹn đã được xử lý, không thể chỉnh sửa trực tuyến.'],409);
-        $spaIds=in_array($booking->loai_dich_vu,['SPA','BOTH'],true)?($data['spa_services']??json_decode($booking->dich_vu_spa,true)?:[]):[];
-        if (in_array($booking->loai_dich_vu,['SPA','BOTH'],true) && !$spaIds) return response()->json(['message'=>'Vui lòng chọn ít nhất một dịch vụ Spa.'],422);
-        if ($spaIds && DB::table('kho_hang')->where('danhmuc','DICH_VU_SPA')->whereIn('item_id',$spaIds)->count()!==count($spaIds))
-            return response()->json(['message'=>'Danh sách dịch vụ Spa không hợp lệ.'],422);
-        DB::table('lich_hen_khach')->where('id',$booking->id)->update([
-            'ngay_hen'=>$data['appointment_date'],'ca_hen'=>$data['shift'],'gio_mong_muon'=>$time,
-            'ghi_chu_kham'=>$data['medical_note']??null,'dich_vu_spa'=>json_encode($spaIds),'updated_at'=>now()
-        ]);
-        if ($booking->queue_id) {
-            $note='Đặt lịch trực tuyến '.$booking->ma_lich_hen.' · Ngày '.$data['appointment_date'].' · Ca '.($data['shift']==='SANG'?'sáng':'chiều').' · Giờ mong muốn '.$time.
-                (!empty($data['medical_note'])?' · Ghi chú: '.$data['medical_note']:'');
-            DB::table('hang_doi_kham')->where('queue_id',$booking->queue_id)->update(['ghi_chu'=>$note,'updated_at'=>now()]);
+
+        $time = $data['preferred_time'];
+        if (($data['shift'] === 'SANG' && ($time < '07:00' || $time > '11:00')) ||
+            ($data['shift'] === 'CHIEU' && ($time < '14:00' || $time > '17:00'))) {
+            return response()->json(['message' => 'Giờ mong muốn không nằm trong ca đã chọn.'], 422);
         }
-        return response()->json(['status'=>'success','message'=>'Đã cập nhật lịch hẹn.']);
+
+        $booking = DB::table('lich_hen_khach as b')
+            ->join('chu_nuoi as o', 'o.owner_id', '=', 'b.owner_id')
+            ->where('o.phone', trim($data['phone']))
+            ->where('b.id', $data['booking_id'])
+            ->select('b.*')
+            ->first();
+
+        if (!$booking) {
+            return response()->json(['message' => 'Không tìm thấy lịch hẹn thuộc số điện thoại này.'], 404);
+        }
+        if ($booking->trang_thai !== 'CHO_XAC_NHAN') {
+            return response()->json(['message' => 'Lịch hẹn đã được xử lý, không thể chỉnh sửa trực tuyến.'], 409);
+        }
+
+        $spaIds = in_array($booking->loai_dich_vu, ['SPA', 'BOTH'], true)
+            ? ($data['spa_services'] ?? (json_decode($booking->dich_vu_spa, true) ?: []))
+            : [];
+
+        if (in_array($booking->loai_dich_vu, ['SPA', 'BOTH'], true) && !$spaIds) {
+            return response()->json(['message' => 'Vui lòng chọn ít nhất một dịch vụ Spa.'], 422);
+        }
+        if ($spaIds && DB::table('kho_hang')->where('danhmuc', 'DICH_VU_SPA')->whereIn('item_id', $spaIds)->count() !== count($spaIds)) {
+            return response()->json(['message' => 'Danh sách dịch vụ Spa không hợp lệ.'], 422);
+        }
+
+        DB::table('lich_hen_khach')->where('id', $booking->id)->update([
+            'ngay_hen' => $data['appointment_date'],
+            'ca_hen' => $data['shift'],
+            'gio_mong_muon' => $time,
+            'ghi_chu_kham' => $data['medical_note'] ?? null,
+            'dich_vu_spa' => json_encode($spaIds),
+            'updated_at' => now()
+        ]);
+
+        if ($booking->queue_id) {
+            $note = 'Đặt lịch trực tuyến ' . $booking->ma_lich_hen .
+                ' · Ngày ' . $data['appointment_date'] .
+                ' · Ca ' . ($data['shift'] === 'SANG' ? 'sáng' : 'chiều') .
+                ' · Giờ mong muốn ' . $time .
+                (!empty($data['medical_note']) ? ' · Ghi chú: ' . $data['medical_note'] : '');
+            DB::table('hang_doi_kham')->where('queue_id', $booking->queue_id)
+                ->update(['ghi_chu' => $note, 'updated_at' => now()]);
+        }
+
+        return response()->json(['status' => 'success', 'message' => 'Đã cập nhật lịch hẹn.']);
     }
 
     /** Danh sách lịch hẹn để lễ tân/quản trị tiếp nhận. */

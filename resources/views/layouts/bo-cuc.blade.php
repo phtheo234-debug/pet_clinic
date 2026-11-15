@@ -194,7 +194,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="{{ asset('js/cau-hinh.js') }}?v=2{{ }}"></script>
+    <script src="{{ asset('js/cau-hinh.js') }}?v=2"></script>
 
     {{-- Script riêng của từng trang --}}
     @stack('scripts')

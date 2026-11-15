@@ -333,6 +333,27 @@
 @endif
 
 
+{{-- Modal thông tin lưu trú --}}
+<div class="modal fade" id="cageStayModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold" id="cageStayTitle">Thông tin lưu trú</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Đóng"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mb-0">
+                        <thead class="thead-light"><tr><th>Mã thú - Tên thú</th><th>Tên chủ nuôi</th><th>Số điện thoại</th></tr></thead>
+                        <tbody id="cageStayBody"><tr><td colspan="3" class="text-center text-muted">Chưa có dữ liệu.</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button></div>
+        </div>
+    </div>
+</div>
+
 {{-- Modal tự xếp lồng --}}
 <div class="modal fade" id="manualCageModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">

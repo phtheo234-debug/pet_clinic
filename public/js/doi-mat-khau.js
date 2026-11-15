@@ -27,6 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         ? "Mật khẩu mới nhập lại không khớp."
                         : "Mật khẩu mới phải khác mật khẩu hiện tại.";
             alertBox.classList.remove("d-none");
+            const target = !passwordPattern.test(newPassword) || newPassword.toLowerCase() === username.toLowerCase()
+                ? document.getElementById("mat_khau_moi")
+                : document.getElementById("mat_khau_moi_confirmation");
+            if (typeof window.setFormFieldError === "function") window.setFormFieldError(target, alertBox.textContent);
             return;
         }
 

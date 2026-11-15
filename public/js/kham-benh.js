@@ -24,6 +24,7 @@ function renderSurgeryCatalog() {
             '</td><td class="text-right">' + Number(item.gia || 0).toLocaleString("vi-VN") +
             '</td><td>' + (active ? '<span class="badge badge-success">Đang áp dụng</span>' : '<span class="badge badge-secondary">Ngừng áp dụng</span>') +
             '</td><td><button type="button" class="btn btn-sm btn-outline-primary mr-1" data-surgery-edit="' + Number(item.surgery_id) + '">Sửa</button>' +
+            '<button type="button" class="btn btn-sm ' + (active ? 'btn-outline-warning' : 'btn-outline-success') + ' mr-1" data-surgery-toggle="' + Number(item.surgery_id) + '">' + (active ? 'Tạm ngưng' : 'Sử dụng lại') + '</button>' +
             '<button type="button" class="btn btn-sm btn-outline-danger" data-surgery-delete="' + Number(item.surgery_id) + '">Xóa</button></td></tr>';
     }).join("") : '<tr><td colspan="5" class="text-center text-muted">Chưa có loại phẫu thuật.</td></tr>';
 }

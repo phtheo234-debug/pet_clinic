@@ -55,5 +55,5 @@
 </div></div></div></section>
 <section id="contact" class="section container"><div class="section-heading"><span>LIÊN HỆ</span><h2>Chúng tôi luôn sẵn sàng hỗ trợ</h2></div><div class="row text-center"><div class="col-md-4"><i class="fas fa-map-marker-alt contact-icon"></i><h6>Địa chỉ</h6><p>Vui lòng cập nhật địa chỉ phòng khám tại đây.</p></div><div class="col-md-4"><i class="fas fa-phone contact-icon"></i><h6>Điện thoại</h6><p>Liên hệ trực tiếp với lễ tân phòng khám.</p></div><div class="col-md-4"><i class="fas fa-clock contact-icon"></i><h6>Giờ tiếp nhận</h6><p>Sáng 07:00–11:00 · Chiều 14:00–17:00</p></div></div></section>
 <footer class="footer text-center">© {{ date('Y') }} PET CLINIC · Chăm sóc thú cưng tận tâm</footer>
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script><script src="{{ asset('js/khach-hang.js') }}?v=3"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script><script src="{{ asset('js/form-guidance.js') }}?v=1"></script><script src="{{ asset('js/khach-hang.js') }}?v=4"></script>
 </body></html>

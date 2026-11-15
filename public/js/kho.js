@@ -379,8 +379,6 @@ async function saveInventoryItem(event) {
         donvitinh: category === "DO_DUNG" ? "" : document.getElementById("inventory_unit").value.trim(),
         soluong: quantity,
         dongia: Number(document.getElementById("inventory_price").value) * 1000,
-        lieu_mg_kg: null,
-        mg_moi_don_vi: null,
     };
     if (!id && isBatchCategory) {
         payload.ngaynhap = importDate || localToday;

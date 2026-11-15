@@ -164,7 +164,7 @@ async function printMedicalRecord(recordId) {
     try {
         const response = await apiRequest("/medical/records/" + recordId);
         const record = response?.data?.data || response?.data || {};
-        const labels = {CHUA_KHAM:"Chưa khám",DANG_DIEU_TRI:"Đang điều trị",HOAN_THANH:"Hoàn thành",CHUYEN_VIEN:"Chuyển viện"};
+        const labels = {OUTPATIENT:"Ngoại trú",INPATIENT:"Chỉ định nội trú",SURGERY:"Chỉ định phẫu thuật",TRANSFER:"Chuyển viện"};
         const rows = (record.items || []).map((item, index) => "<tr><td>" + (index+1) + "</td><td>" + escapeMedicalHtml(item.ten_sanpham) + "</td><td>" + (item.danhmuc === "VAC_XIN" ? "Vắc-xin" : "Thuốc") + "</td><td>" + Number(item.soluong) + " " + escapeMedicalHtml(item.donvitinh) + "</td><td>" + escapeMedicalHtml(item.huongdan || "-") + "</td></tr>").join("");
         const win = window.open("", "_blank", "width=900,height=750");
         if (!win) { alert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép popup rồi thử lại."); return; }
@@ -176,7 +176,7 @@ async function printMedicalRecord(recordId) {
             "<p><b>Chủ nuôi:</b> " + escapeMedicalHtml(record.ten_chu_nuoi || "") + " &nbsp; <b>Điện thoại:</b> " + escapeMedicalHtml(record.sdt_chu_nuoi || "") + "</p>" +
             "<p><b>Cân nặng khi khám:</b> " + escapeMedicalHtml(record.cannangkhi_kham) + " kg</p>" +
             "<p><b>Triệu chứng:</b><br>" + escapeMedicalHtml(record.trieuchung || "-") + "</p><p><b>Chẩn đoán:</b><br>" + escapeMedicalHtml(record.chandoan || "-") + "</p>" +
-            "<p><b>Trạng thái:</b> " + escapeMedicalHtml(labels[record.trangthai] || record.trangthai || "-") + "</p>" +
+            "<p><b>Trạng thái:</b> " + escapeMedicalHtml(labels[record.huong_xuly] || record.huong_xuly || "-") + "</p>" +
             (record.surgery_id ? "<p><b>Phẫu thuật:</b> " + escapeMedicalHtml(record.ma_phauthuat || "") + " - " + escapeMedicalHtml(record.ten_phauthuat || "") + " · " + Number(record.surgery_price || 0).toLocaleString("vi-VN") + " đ</p>" : "") +
             "<h3>THUỐC / VẮC-XIN CHỈ ĐỊNH</h3><table><thead><tr><th>STT</th><th>Tên</th><th>Loại</th><th>Số lượng</th><th>Hướng dẫn</th></tr></thead><tbody>" + (rows || "<tr><td colspan=\"5\">Không kê thuốc/vắc-xin</td></tr>") + "</tbody></table>" +
             "<div class=\"sign\"><div>Bác sĩ khám<br><br><br>" + escapeMedicalHtml(record.ten_bac_si || "") + "</div><div>Chủ nuôi xác nhận<br><br><br>........................</div></div><script>window.onload=function(){window.print();};<\\/script></body></html>");
@@ -346,7 +346,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ?.checked
                     ? 1
                     : 0,
-                trangthai: mapActionToStatus(huongXuLy),
             };
 
             try {
@@ -494,12 +493,6 @@ async function loadMedicalRecords() {
 }
 
 function renderMedicalHistory(records) {
-    const statusMap = {
-        CHUA_KHAM: '<span class="badge badge-secondary">Chưa khám</span>',
-        DANG_DIEU_TRI: '<span class="badge badge-warning">Đang điều trị</span>',
-        HOAN_THANH: '<span class="badge badge-success">Hoàn thành</span>',
-        CHUYEN_VIEN: '<span class="badge badge-danger">Chuyển viện</span>',
-    };
     const actionLabels = {
         OUTPATIENT: "Ngoại trú",
         INPATIENT: "Chỉ định nội trú",
@@ -531,11 +524,8 @@ function renderMedicalHistory(records) {
                 : r.mathucung
                   ? `${r.mathucung}${r.ten_thucung ? " (" + r.ten_thucung + ")" : ""}`
                   : `#${r.pet_id}`;
-            const statusKey = r.trangthai;
             const actionLabel =
                 actionLabels[r.huong_xuly] ||
-                statusMap[statusKey] ||
-                statusKey ||
                 "-";
             const boardingLabel = boardingLabels[r.boarding_status]
                 ? `<br>${boardingLabels[r.boarding_status]}`

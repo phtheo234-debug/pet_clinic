@@ -25,6 +25,10 @@ Route::middleware('web.token')->group(function () {
     // danh mục được kiểm soát riêng tại API.
     Route::view('/inventory', 'kho')->name('kho');
 
+    Route::view('/appointments', 'lich-hen-khach')
+        ->middleware('web.role:QUAN_TRI,NHAN_VIEN')
+        ->name('lich-hen-khach');
+
     // Thanh toán, xuất viện và ghi nhận Spa dành cho nhân viên/quản trị.
     Route::view('/invoices', 'hoa-don')
         ->middleware('web.role:QUAN_TRI,NHAN_VIEN')

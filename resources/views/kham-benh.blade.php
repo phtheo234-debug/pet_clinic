@@ -64,7 +64,7 @@
                     </small>
 
                     <small id="doseSuggestion" class="text-info">
-                        Nhập cân nặng để tự động tính liều mg/kg
+                        Bác sĩ tự chỉ định liều và số lượng thuốc theo tình trạng thú cưng.
                     </small>
                 </div>
                 <div class="form-group col-md-4">

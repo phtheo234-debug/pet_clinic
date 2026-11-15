@@ -12,19 +12,19 @@ use Illuminate\Support\Facades\Mail;
 class XacThucController extends Controller
 {
     /**
-     * Không cho một tài khoản dùng tên đăng nhập/mật khẩu đã thuộc tài khoản khác.
+     * Mật khẩu mới chỉ cần khác mật khẩu của các tài khoản khác.
+     * Không so sánh mật khẩu với username, email hoặc số điện thoại.
      */
-    private function conflictsWithOtherCredentials(string $value, ?int $ignoreUserId = null): bool
+    private function passwordUsedByOtherAccount(string $password, ?int $ignoreUserId = null): bool
     {
-        $accounts = NguoiDung::select('user_id', 'username', 'mat_khau')->get();
+        $accounts = NguoiDung::select('user_id', 'mat_khau')->get();
 
         foreach ($accounts as $account) {
             if ($ignoreUserId !== null && (int) $account->user_id === $ignoreUserId) {
                 continue;
             }
 
-            if (strcasecmp($value, (string) $account->username) === 0
-                || Hash::check($value, $account->mat_khau)) {
+            if (Hash::check($password, $account->mat_khau)) {
                 return true;
             }
         }
@@ -60,7 +60,7 @@ class XacThucController extends Controller
         $passwordCompliant = preg_match(
             '/^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/',
             $fields['mat_khau']
-        ) === 1 && !$this->conflictsWithOtherCredentials($fields['mat_khau'], (int) $user->user_id);
+        ) === 1 && !$this->passwordUsedByOtherAccount($fields['mat_khau'], (int) $user->user_id);
 
         if (!$passwordCompliant && !$user->phai_doimatkhau) {
             $user->phai_doimatkhau = true;
@@ -123,10 +123,10 @@ class XacThucController extends Controller
             ], 422);
         }
 
-        if ($this->conflictsWithOtherCredentials($fields['mat_khau_moi'], (int) $user->user_id)) {
+        if ($this->passwordUsedByOtherAccount($fields['mat_khau_moi'], (int) $user->user_id)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Mật khẩu này đã được một tài khoản khác sử dụng làm tên đăng nhập hoặc mật khẩu. Vui lòng chọn mật khẩu khác.',
+                'message' => 'Mật khẩu này đã được một tài khoản khác sử dụng. Vui lòng chọn mật khẩu khác.',
             ], 422);
         }
 
@@ -150,7 +150,7 @@ class XacThucController extends Controller
         $fields = $request->validate([
             'ho_ten' => 'required|string|max:100',
             'email' => 'required|email|max:100|unique:nguoi_dung,email,' . $user->user_id . ',user_id',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:20|unique:nguoi_dung,phone,' . $user->user_id . ',user_id',
         ]);
 
         $user->ho_ten = $fields['ho_ten'];
@@ -182,10 +182,10 @@ class XacThucController extends Controller
 
         $user = $request->user();
 
-        if ($this->conflictsWithOtherCredentials($fields['mat_khau_moi'], (int) $user->user_id)) {
+        if ($this->passwordUsedByOtherAccount($fields['mat_khau_moi'], (int) $user->user_id)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Mật khẩu này đã được một tài khoản khác sử dụng làm tên đăng nhập hoặc mật khẩu. Vui lòng chọn mật khẩu khác.',
+                'message' => 'Mật khẩu này đã được một tài khoản khác sử dụng. Vui lòng chọn mật khẩu khác.',
             ], 422);
         }
 

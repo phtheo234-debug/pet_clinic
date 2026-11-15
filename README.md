@@ -39,3 +39,21 @@ Cac bang ha tang Laravel (`cache`, `jobs`, `sessions`, `personal_access_tokens`.
 Day la bo migration khoi tao cho database moi. Khong chay `migrate:fresh` tren database dang co du lieu can giu. Database cu can sao luu va chuyen du lieu rieng.
 
 Ten file va class do du an tao duoc doi sang tieng Viet khong dau. Ten bat buoc cua Laravel/Composer duoc giu nguyen. URL API duoc giu nguyen de khong lam dut cac request tu giao dien.
+
+## Website khach hang va dat lich
+
+- Trang chu cong khai: `/`; dang nhap nhan vien: `/login`.
+- Khach hang tim ho so bang so dien thoai, chon thu cung cu hoac tao ho so thu cung moi.
+- Ho tro dat lich kham, Spa hoac ca hai; chon ngay, ca sang/chieu va gio mong muon.
+- Yeu cau kham duoc dua vao `hang_doi_kham`; `created_by` cho phep NULL de phan biet lich hen tu khach hang voi luot do nhan vien tiep nhan.
+- Tra cuu/chinh sua lich hen can ca so dien thoai va ma lich hen duoc cap khi dat lich. Chi lich dang cho xac nhan moi duoc chinh sua truc tuyen.
+- Danh muc Spa tren trang khach hang lay truc tiep tu cac mat hang co `danhmuc = DICH_VU_SPA` trong `kho_hang`.
+
+Sau khi cap nhat ma nguon, chay:
+
+```bash
+php artisan migrate
+php artisan optimize:clear
+```
+
+Khong dung `migrate:fresh` tren database dang co du lieu.

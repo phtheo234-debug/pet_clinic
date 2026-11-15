@@ -45,7 +45,7 @@ class NguoiDungFactory extends Factory
             'mat_khau' => Hash::make($this->generatePassword($username)),
             'ho_ten' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'phone' => fake()->numerify('09########'),
+            'phone' => fake()->unique()->numerify('09########'),
             'vaitro' => 'NHAN_VIEN',
             'trangthai' => 'HOAT_DONG',
             'phai_doimatkhau' => true,

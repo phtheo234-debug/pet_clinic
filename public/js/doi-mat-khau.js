@@ -16,10 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const newPassword = document.getElementById("mat_khau_moi").value;
         const confirmation = document.getElementById("mat_khau_moi_confirmation").value;
 
-        if (newPassword !== confirmation || newPassword === currentPassword) {
-            alertBox.textContent = newPassword !== confirmation
-                ? "Mật khẩu mới nhập lại không khớp."
-                : "Mật khẩu mới phải khác mật khẩu hiện tại.";
+        const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/;
+        const username = (getCurrentUser() || {}).username || "";
+        if (!passwordPattern.test(newPassword) || newPassword !== confirmation || newPassword === currentPassword || newPassword.toLowerCase() === username.toLowerCase()) {
+            alertBox.textContent = !passwordPattern.test(newPassword)
+                ? "Mật khẩu phải dài 6–10 ký tự, không có khoảng trắng và gồm chữ, số, ký tự đặc biệt."
+                : newPassword.toLowerCase() === username.toLowerCase()
+                    ? "Mật khẩu không được trùng tên đăng nhập."
+                    : newPassword !== confirmation
+                        ? "Mật khẩu mới nhập lại không khớp."
+                        : "Mật khẩu mới phải khác mật khẩu hiện tại.";
             alertBox.classList.remove("d-none");
             return;
         }

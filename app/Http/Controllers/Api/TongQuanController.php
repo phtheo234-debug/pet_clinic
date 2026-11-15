@@ -33,56 +33,16 @@ class TongQuanController extends Controller
     }
 
     /**
-     * Cảnh báo hạn sử dụng thuốc, vắc-xin và thức ăn.
-     * Hàng hết hạn tự động chuyển trạng thái HET_HAN, không còn được xuất/bán.
+     * Cảnh báo mặt hàng sắp hết dựa trên số lượng tồn trực tiếp.
      */
     public function getInventoryAlerts()
     {
-        $today = Carbon::today();
-        $sixMonths = Carbon::today()->addMonths(6);
-
-        DB::table('lo_hang')
-            ->whereNotNull('ngayhethan')
-            ->whereDate('ngayhethan', '<', $today->toDateString())
-            ->where('trangthai', 'DANG_SU_DUNG')
-            ->update(['trangthai' => 'HET_HAN']);
-
-        $base = DB::table('lo_hang as b')
-            ->join('kho_hang as i', 'i.item_id', '=', 'b.item_id')
-            ->whereIn('i.danhmuc', ['THUOC', 'VAC_XIN', 'THUC_AN'])
-            ->where('b.soluong', '>', 0)
-            ->select('b.batch_id', 'i.masanpham', 'i.ten_sanpham', 'i.danhmuc',
-                'b.solo', 'b.soluong', 'b.ngayhethan', 'b.trangthai');
-
-        $soonExpiry = (clone $base)->where('b.trangthai', 'DANG_SU_DUNG')
-            ->whereDate('b.ngayhethan', '>=', $today->toDateString())
-            ->whereDate('b.ngayhethan', '<', $sixMonths->toDateString())
-            ->orderBy('b.ngayhethan')->get();
-
-        $expired = (clone $base)->where('b.trangthai', 'HET_HAN')
-            ->whereDate('b.ngayhethan', '<', $today->toDateString())
-            ->orderBy('b.ngayhethan')->get();
-
-        // Tồn thuốc/vắc-xin/thức ăn được cộng từ các lô còn sử dụng;
-        // đồ dùng lấy trực tiếp từ kho_hang.soluongton. Không đưa kho dịch vụ vào cảnh báo.
-        $batchStocks = DB::table('lo_hang')
-            ->where('trangthai', 'DANG_SU_DUNG')
-            ->where(function ($query) use ($today) {
-                $query->whereNull('ngayhethan')
-                    ->orWhereDate('ngayhethan', '>=', $today->toDateString());
-            })
-            ->groupBy('item_id')
-            ->select('item_id', DB::raw('SUM(soluong) as tong_ton'));
-
-        $lowStockRows = DB::table('kho_hang as i')
-            ->leftJoinSub($batchStocks, 'stock', function ($join) {
-                $join->on('stock.item_id', '=', 'i.item_id');
-            })
-            ->whereIn('i.danhmuc', ['THUOC', 'VAC_XIN', 'THUC_AN', 'DO_DUNG'])
-            ->select('i.item_id', 'i.masanpham', 'i.ten_sanpham', 'i.danhmuc',
-                DB::raw("CASE WHEN i.danhmuc = 'DO_DUNG' THEN COALESCE(i.soluongton, 0) ELSE COALESCE(stock.tong_ton, 0) END as so_luong"))
-            ->having('so_luong', '<=', 5)
-            ->orderBy('i.danhmuc')->orderBy('i.ten_sanpham')->get();
+        $lowStockRows = DB::table('kho_hang')
+            ->whereIn('danhmuc', ['THUOC', 'VAC_XIN', 'THUC_AN', 'DO_DUNG'])
+            ->where('soluongton', '<=', 5)
+            ->orderBy('danhmuc')
+            ->orderBy('ten_sanpham')
+            ->get(['item_id', 'masanpham', 'ten_sanpham', 'danhmuc', 'soluongton']);
 
         $khoSapHet = [
             'THUOC' => ['ten_kho' => 'Kho thuốc', 'items' => []],
@@ -90,13 +50,15 @@ class TongQuanController extends Controller
             'THUC_AN' => ['ten_kho' => 'Kho thức ăn', 'items' => []],
             'DO_DUNG' => ['ten_kho' => 'Kho đồ dùng', 'items' => []],
         ];
+
         foreach ($lowStockRows as $item) {
             $khoSapHet[$item->danhmuc]['items'][] = [
                 'ma' => $item->masanpham,
                 'ten' => $item->ten_sanpham,
-                'so_luong' => (int) $item->so_luong,
+                'so_luong' => (int) $item->soluongton,
             ];
         }
+
         foreach ($khoSapHet as $key => $store) {
             $khoSapHet[$key]['so_mat_hang'] = count($store['items']);
         }
@@ -104,10 +66,6 @@ class TongQuanController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => [
-                'sap_het_han' => $soonExpiry,
-                'da_het_han' => $expired,
-                'so_sap_het_han' => $soonExpiry->count(),
-                'so_da_het_han' => $expired->count(),
                 'kho_sap_het' => $khoSapHet,
             ],
         ]);

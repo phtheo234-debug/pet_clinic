@@ -5,11 +5,40 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\NguoiDung;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;\nuse Illuminate\Validation\Rules\Regex;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class QuanLyTaiKhoanController extends Controller
 {
+    /**
+     * Sinh mật khẩu tạm ngẫu nhiên gồm chữ, số và ký tự đặc biệt.
+     */
+    private function generateTemporaryPassword(string $username = ''): string
+    {
+        $letters = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+        $numbers = '23456789';
+        $specials = '!@#$%*?_-';
+        $all = $letters . $numbers . $specials;
+
+        do {
+            $characters = [
+                $letters[random_int(0, strlen($letters) - 1)],
+                $numbers[random_int(0, strlen($numbers) - 1)],
+                $specials[random_int(0, strlen($specials) - 1)],
+            ];
+            while (count($characters) < 9) {
+                $characters[] = $all[random_int(0, strlen($all) - 1)];
+            }
+            for ($i = count($characters) - 1; $i > 0; $i--) {
+                $j = random_int(0, $i);
+                [$characters[$i], $characters[$j]] = [$characters[$j], $characters[$i]];
+            }
+            $password = implode('', $characters);
+        } while ($username !== '' && strcasecmp($password, $username) === 0);
+
+        return $password;
+    }
+
     /**
      * Danh sách tài khoản nhân viên.
      */

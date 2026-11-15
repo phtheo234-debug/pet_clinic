@@ -506,7 +506,7 @@ class ThanhToanController extends Controller
                     (int) ceil($checkInDate->diffInHours(now()) / 24)
                 );
 
-                $pricePerDay = 100000;
+                $pricePerDay = 50000;
                 $totalBoarding = $days * $pricePerDay;
 
 
@@ -752,7 +752,7 @@ class ThanhToanController extends Controller
                 'pb.id', 'pb.cage_id', 'pb.check_in', 'pb.check_out', 'pb.status',
                 'c.malong', 'c.ten_long', 'c.loailong'
             ]);
-        $rateMap = ['THUONG' => 50000, 'CAP_CUU_ICU' => 80000, 'CACH_LY' => 100000];
+        $rateMap = ['THUONG' => 50000, 'CAP_CUU_ICU' => 50000, 'CACH_LY' => 50000];
         $boardings = $boardingRows->map(function ($stay) use ($rateMap) {
             $checkIn = Carbon::parse($stay->check_in);
             $checkOut = $stay->check_out ? Carbon::parse($stay->check_out) : now();

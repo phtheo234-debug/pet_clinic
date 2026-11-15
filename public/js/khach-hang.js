@@ -12,7 +12,12 @@ async function pubRequest(path, options = {}) {
         headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) }
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat().join(' ') || 'Có lỗi xảy ra');
+    if (!response.ok) {
+        if (data.errors && typeof window.showFormValidationErrors === "function") {
+            window.showFormValidationErrors(data.errors);
+        }
+        throw new Error(data.message || Object.values(data.errors || {}).flat().join(' ') || 'Có lỗi xảy ra');
+    }
     return data;
 }
 

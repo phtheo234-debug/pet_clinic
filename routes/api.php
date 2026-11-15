@@ -64,7 +64,6 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         Route::post('/inventory', [QuanLyKhoController::class, 'store']);
         Route::put('/inventory/{id}', [QuanLyKhoController::class, 'update']);
         Route::delete('/inventory/{id}', [QuanLyKhoController::class, 'destroy']);
-        Route::delete('/inventory/batches/{id}', [KhoController::class, 'deleteExpiredBatch']);
 
         Route::get('/surgeries', [PhauThuatController::class, 'index']);
         Route::post('/surgeries', [PhauThuatController::class, 'store']);
@@ -104,8 +103,7 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
 
     // Danh mục kho cho phép xem; nhập/xuất kho dành cho nhân viên/quản trị.
     Route::get('/inventory', [KhoController::class, 'index']);
-    Route::post('/inventory/batch/import', [KhoController::class, 'importBatch'])->middleware('role:QUAN_TRI,NHAN_VIEN');
-    Route::post('/inventory/export', [KhoController::class, 'exportMedicineFEFO'])->middleware('role:QUAN_TRI,NHAN_VIEN');
+    Route::post('/inventory/export', [KhoController::class, 'exportMedicine'])->middleware('role:QUAN_TRI,NHAN_VIEN');
 
     // Chỉ bác sĩ/quản trị được lập hồ sơ khám và kê đơn.
     Route::middleware('role:QUAN_TRI,BAC_SI')->group(function () {

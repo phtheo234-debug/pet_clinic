@@ -11,6 +11,10 @@
         const custom = field.getAttribute("data-guidance");
         if (custom) return custom;
         const parts = [];
+        const label = field.id
+            ? document.querySelector('label[for="' + CSS.escape(field.id) + '"]')?.textContent || ""
+            : field.closest(".form-group")?.querySelector("label")?.textContent || "";
+        const context = (label + " " + (field.placeholder || "") + " " + field.id).toLowerCase();
         parts.push(field.required ? "Bắt buộc nhập." : "Không bắt buộc; chỉ nhập nếu có thông tin.");
         const minLength = field.getAttribute("minlength");
         const maxLength = field.getAttribute("maxlength");
@@ -19,11 +23,16 @@
         else if (maxLength) parts.push("Tối đa " + maxLength + " ký tự.");
         if (field.pattern) parts.push("Định dạng phải khớp mẫu quy định trong ô nhập.");
         if (field.type === "email") parts.push("Nhập địa chỉ email hợp lệ (ví dụ: ten@domain.com).");
-        if (field.type === "tel") parts.push("Chỉ nhập số điện thoại hợp lệ; không nhập chữ.");
+        if (field.type === "tel" || /điện thoại|số điện thoại|phone/.test(context)) parts.push("Chỉ nhập số điện thoại hợp lệ; không nhập chữ. Nếu có giới hạn độ dài hoặc mẫu, phải tuân thủ đúng giới hạn hiển thị.");
+        if (/họ tên|tên chủ|tên thú|tên sản phẩm|tên lồng|tên phẫu thuật/.test(context)) parts.push("Nhập đầy đủ tên, không để trống nếu trường được đánh dấu bắt buộc.");
+        if (/mã |mã$|code/.test(context)) parts.push("Nhập mã đúng tiền tố và cấu trúc được hướng dẫn; không tự ý thêm khoảng trắng.");
+        if (/tìm kiếm|tra cứu|search/.test(context)) parts.push("Nhập từ khóa cần tìm; có thể tìm theo tên hoặc mã nếu trang hỗ trợ.");
         if (field.type === "number") {
             if (field.min !== "") parts.push("Giá trị nhỏ nhất: " + field.min + ".");
             if (field.max !== "") parts.push("Giá trị lớn nhất: " + field.max + ".");
             if (field.step && field.step !== "any") parts.push(field.step === "1" ? "Chỉ nhập số nguyên." : "Bước tăng/giảm: " + field.step + ".");
+            if (field.min === "" && /giá|đơn giá|chi phí/.test(context)) parts.push("Chỉ nhập số tiền từ 0 trở lên, không nhập ký hiệu tiền tệ.");
+            if (field.min === "" && /số lượng|cân nặng|trọng lượng/.test(context)) parts.push("Chỉ nhập số hợp lệ lớn hơn 0.");
         }
         if (field.type === "date" || field.type === "time") {
             if (field.min) parts.push("Không được trước " + field.min + ".");

@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const newPassword = document.getElementById("mat_khau_moi").value;
         const confirmation = document.getElementById("mat_khau_moi_confirmation").value;
 
-        const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/;
+        const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s])\S{6,10}$/;
         const username = (getCurrentUser() || {}).username || "";
         if (!passwordPattern.test(newPassword) || newPassword !== confirmation || newPassword === currentPassword || newPassword.toLowerCase() === username.toLowerCase()) {
             alertBox.textContent = !passwordPattern.test(newPassword)

@@ -159,6 +159,30 @@ async function confirmBoardingRequest(requestId) {
     }
 }
 
+function escapeCageHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    })[char]);
+}
+
+function showCageOccupants(cageId) {
+    const cage = cagesList.find(item => Number(item.cage_id) === Number(cageId));
+    if (!cage) return;
+    const pets = Array.isArray(cage.pets) ? cage.pets : [];
+    document.getElementById("cageStayTitle").textContent =
+        "Thông tin lưu trú · " + (cage.malong || "") + " - " + (cage.ten_long || "");
+    document.getElementById("cageStayBody").innerHTML = pets.length
+        ? pets.map(pet => `
+            <tr>
+                <td>${escapeCageHtml(pet.mathucung || "-")} - ${escapeCageHtml(pet.ten_thucung || "-")}</td>
+                <td>${escapeCageHtml(pet.owner_name || "-")}</td>
+                <td>${escapeCageHtml(pet.owner_phone || "-")}</td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="3" class="text-center text-muted">Lồng hiện không có thú cưng.</td></tr>';
+    $("#cageStayModal").modal("show");
+}
+
 function renderCagesGrid() {
     const typeLabels = {
         THUONG: "Lồng thường",
@@ -198,24 +222,27 @@ function renderCagesGrid() {
             const statusClass = isFull ? "warning" : status.cls;
             const occupants = Array.isArray(cage.pets) ? cage.pets : [];
             const occupantsHtml = occupants.length
-                ? occupants
-                      .map(
-                          (pet) =>
-                              `<div><i class="fas fa-paw text-muted mr-1"></i>${pet.mathucung || ""} - ${pet.ten_thucung || ""}</div>`,
-                      )
-                      .join("")
+                ? occupants.map(pet =>
+                    `<div><i class="fas fa-paw text-muted mr-1"></i>${escapeCageHtml(pet.mathucung || "")} - ${escapeCageHtml(pet.ten_thucung || "")}</div>`
+                  ).join("")
                 : '<span class="text-muted">Chưa có thú cưng</span>';
 
+            const stayInfoButton = currentCount > 0
+                ? `<button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="showCageOccupants(${cageId})"><i class="fas fa-clipboard-list mr-1"></i>Thông tin lưu trú</button>`
+                : "";
+
             const adminActions = isAdminCage
-                ? `
-                <hr>
-                <button type="button" class="btn btn-sm btn-outline-primary mr-1" onclick="editCage(${cageId})">
-                    <i class="fas fa-edit mr-1"></i> Sửa
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCage(${cageId})">
-                    <i class="fas fa-trash mr-1"></i> Xóa
-                </button>
-            `
+                ? (currentCount > 0
+                    ? '<hr><small class="text-muted"><i class="fas fa-lock mr-1"></i>Lồng đang có thú: không được sửa hoặc xóa.</small>'
+                    : `
+                        <hr>
+                        <button type="button" class="btn btn-sm btn-outline-primary mr-1" onclick="editCage(${cageId})">
+                            <i class="fas fa-edit mr-1"></i> Sửa
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCage(${cageId})">
+                            <i class="fas fa-trash mr-1"></i> Xóa
+                        </button>
+                    `)
                 : "";
 
             return `
@@ -228,8 +255,10 @@ function renderCagesGrid() {
                     <div class="card-body">
                         <p class="mb-1"><strong>Phân loại:</strong> ${typeLabels[cage.loailong] || cage.loailong}</p>
                         <p class="mb-1"><strong>Sức chứa:</strong> ${currentCount}/${maxCapacity} thú cưng</p>
-                        <p class="mb-2"><strong>Giới hạn:</strong> ${Number(cage.tai_trong_toi_da || 0)} kg · Loài: ${cage.loai_ap_dung || "Chưa cấu hình"}</p>
+                        <p class="mb-1"><strong>Giá lưu trú:</strong> 50.000đ/ngày</p>
+                        <p class="mb-2"><strong>Giới hạn:</strong> ${Number(cage.tai_trong_toi_da || 0)} kg · Loài: ${escapeCageHtml(cage.loai_ap_dung || "Chưa cấu hình")}</p>
                         <div class="small"><strong>Thú cưng đang lưu trú:</strong>${occupantsHtml}</div>
+                        ${stayInfoButton}
                         ${adminActions}
                     </div>
                 </div>

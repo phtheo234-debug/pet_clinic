@@ -131,13 +131,25 @@
             const simpleKey = key.split(".").pop();
             const normalize = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
             const normalizedKey = normalize(simpleKey);
+            const aliases = {
+                ho_ten: ["hoten", "hovaten", "newname", "editname", "profilename", "ownername"],
+                owner_name: ["ownername", "hotenchunuoi", "ownername"],
+                pet_name: ["petname", "tenthuccung"],
+                name: ["name", "ten", "tenthuccung", "inventoryname", "spaservicename", "surgeryname"],
+                appointment_date: ["appointmentdate"],
+                preferred_time: ["preferredtime"],
+                phone: ["phone", "sodienthoai", "lookupphone"],
+                email: ["email", "owneremail", "profileemail"]
+            };
+            const accepted = [normalizedKey, ...(aliases[simpleKey] || [])];
             const candidates = form ? Array.from(form.querySelectorAll("input, textarea")) : [];
-            const field = candidates.find(item =>
-                item.name === key || item.name === simpleKey || item.id === key || item.id === simpleKey ||
-                normalize(item.name) === normalizedKey || normalize(item.id) === normalizedKey ||
-                normalize(item.id).includes(normalizedKey) ||
-                normalize(item.closest(".form-group")?.querySelector("label")?.textContent).includes(normalizedKey)
-            );
+            const field = candidates.find(item => {
+                const id = normalize(item.id);
+                const name = normalize(item.name);
+                const label = normalize(item.closest(".form-group")?.querySelector("label")?.textContent);
+                return item.name === key || item.name === simpleKey || item.id === key || item.id === simpleKey ||
+                    accepted.some(alias => alias && (id === alias || name === alias || id.includes(alias) || label.includes(alias)));
+            });
             if (field) setError(field, message);
         });
     };

@@ -344,7 +344,7 @@ async function printPetProfile(petId) {
         const history = Array.isArray(pet.medical_history) ? pet.medical_history : [];
         const historyRows = history.map((item, index) =>
             "<tr><td>" + (index + 1) + "</td><td>#" + escapePetHtml(item.record_id) + "</td><td>" + formatPetDate(item.ngaykham) +
-            "</td><td>" + escapePetHtml(item.chandoan || "-") + "</td><td>" + escapePetHtml(item.trangthai || "-") +
+            "</td><td>" + escapePetHtml(item.chandoan || "-") + "</td><td>" + escapePetHtml(item.huong_xuly || "-") +
             "</td><td>" + escapePetHtml(item.mahoadon || (item.invoice_id ? "Đã thanh toán" : "Chưa thanh toán")) + "</td></tr>"
         ).join("");
         const w = window.open("", "_blank", "width=900,height=750");

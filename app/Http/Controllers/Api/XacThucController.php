@@ -60,7 +60,7 @@ class XacThucController extends Controller
         $passwordCompliant = preg_match(
             '/^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/',
             $fields['mat_khau']
-        ) === 1 ;
+        ) === 1 && !$this->conflictsWithOtherCredentials($fields['mat_khau'], (int) $user->user_id);
 
         if (!$passwordCompliant && !$user->phai_doimatkhau) {
             $user->phai_doimatkhau = true;

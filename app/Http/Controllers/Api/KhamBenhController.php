@@ -200,9 +200,36 @@ class KhamBenhController extends Controller
                 DB::table('hang_doi_kham')->whereIn('queue_id', $completedQueues)
                     ->update(['trangthai' => 'DA_KHAM', 'updated_at' => now()]);
                 if ($completedQueues->isNotEmpty()) {
-                    DB::table('lich_hen_khach')->whereIn('queue_id', $completedQueues)
-                        ->where('loai_dich_vu', 'MEDICAL')->where('trang_thai', 'DA_XAC_NHAN')
-                        ->update(['trang_thai' => 'DA_HOAN_THANH', 'updated_at' => now()]);
+                    $bookings = DB::table('lich_hen_khach')
+                        ->whereIn('queue_id', $completedQueues)
+                        ->where('trang_thai', 'DA_XAC_NHAN')
+                        ->whereDate('ngay_hen', '<=', now()->toDateString())
+                        ->get();
+
+                    foreach ($bookings as $booking) {
+                        $spaIds = json_decode($booking->dich_vu_spa ?? '[]', true) ?: [];
+                        $spaDone = true;
+
+                        if (in_array($booking->loai_dich_vu, ['SPA', 'BOTH'], true)) {
+                            $doneIds = DB::table('luot_dich_vu_spa')
+                                ->where('pet_id', $booking->pet_id)
+                                ->whereIn('item_id', $spaIds)
+                                ->where('created_at', '>=', $booking->created_at)
+                                ->distinct()
+                                ->pluck('item_id')
+                                ->map(fn ($id) => (int) $id)
+                                ->all();
+
+                            $spaDone = count(array_unique(array_map('intval', $spaIds))) === count($doneIds);
+                        }
+
+                        if ($spaDone) {
+                            DB::table('lich_hen_khach')->where('id', $booking->id)->update([
+                                'trang_thai' => 'DA_HOAN_THANH',
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
                 }
 
                 $recordId = DB::table('phieu_kham')->insertGetId([

@@ -36,7 +36,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         e.preventDefault();
         const password = document.getElementById("profileNewPassword").value;
         const confirmation = document.getElementById("profileConfirmPassword").value;
-        if (password !== confirmation) return alert("passwordAlert", "Mật khẩu nhập lại không khớp.");
+        if (password !== confirmation) {
+            const message = "Mật khẩu nhập lại không khớp.";
+            alert("passwordAlert", message);
+            if (typeof window.setFormFieldError === "function") window.setFormFieldError(document.getElementById("profileConfirmPassword"), message);
+            return;
+        }
         try {
             const result = await apiRequest("/users/change-password", {
                 method: "PUT",

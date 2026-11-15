@@ -42,6 +42,19 @@ function openSurgeryForm(id = null) {
 }
 
 async function handleSurgeryCatalogAction(event) {
+    const toggle = event.target.closest("[data-surgery-toggle]");
+    if (toggle) {
+        const id = Number(toggle.dataset.surgeryToggle);
+        const item = surgeryCatalogItems.find(row => Number(row.surgery_id) === id);
+        const action = Number(item?.trangthai) === 1 ? "tạm ngưng" : "sử dụng lại";
+        if (!confirm("Bạn có chắc muốn " + action + " loại phẫu thuật này?")) return;
+        try {
+            const result = await apiRequest("/admin/surgeries/" + id + "/toggle-status", {method:"PUT"});
+            alert(result.message || "Đã cập nhật trạng thái phẫu thuật.");
+            await Promise.all([loadSurgeryCatalog(), loadSurgeryTypes()]);
+        } catch (error) { alert(error.message); }
+        return;
+    }
     const edit = event.target.closest("[data-surgery-edit]");
     const del = event.target.closest("[data-surgery-delete]");
     if (edit) openSurgeryForm(Number(edit.dataset.surgeryEdit));

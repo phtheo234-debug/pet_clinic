@@ -117,13 +117,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("resetPasswordForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const id = document.getElementById("resetUserId").value;
-        const temporaryPassword = document.getElementById("temporaryPassword").value;
         const resetAlert = document.getElementById("resetPasswordAlert");
-        if (temporaryPassword.length < 6) {
-            resetAlert.textContent = "Mật khẩu tạm phải có ít nhất 6 ký tự.";
-            resetAlert.className = "alert alert-danger";
-            return;
-        }
         try {
             await apiRequest(`/admin/users/${id}/reset-password`, {
                 method: "PUT", body: JSON.stringify({ mat_khau_tam: temporaryPassword })
@@ -140,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("createUserForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         try {
-            await apiRequest("/admin/users", {
+            const result = await apiRequest("/admin/users", {
                 method: "POST",
                 body: JSON.stringify({
                     username: document.getElementById("newUsername").value.trim(),
@@ -152,7 +146,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             $("#createUserModal").modal("hide");
             event.target.reset();
-            notify("Tạo tài khoản thành công.", true);
+            const generatedPassword = result.data?.mat_khau_tam || "";
+            notify("Tạo tài khoản thành công. Mật khẩu tạm: " + generatedPassword + ". Hãy sao chép và gửi bảo mật cho người dùng; mật khẩu chỉ hiển thị lần này.", true);
             await loadUsers();
         } catch (error) { notify(error.message); }
     });

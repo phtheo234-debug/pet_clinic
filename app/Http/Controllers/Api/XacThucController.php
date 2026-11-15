@@ -150,12 +150,12 @@ class XacThucController extends Controller
         $fields = $request->validate([
             'ho_ten' => 'required|string|max:100',
             'email' => 'required|email|max:100|unique:nguoi_dung,email,' . $user->user_id . ',user_id',
-            'phone' => 'nullable|string|max:20|unique:nguoi_dung,phone,' . $user->user_id . ',user_id',
+            'phone' => ['required', 'string', 'min:9', 'max:20', 'regex:/^[0-9+().\\-\\s]{9,20}$/', 'unique:nguoi_dung,phone,' . $user->user_id . ',user_id'],
         ]);
 
         $user->ho_ten = $fields['ho_ten'];
         $user->email = $fields['email'];
-        $user->phone = $fields['phone'] ?? null;
+        $user->phone = $fields['phone'];
         $user->save();
 
         return response()->json([

@@ -22,7 +22,7 @@ Khong con tai khoan mau voi mat khau mac dinh. Sau khi migrate, chay `php artisa
     'mat_khau' => \\Illuminate\\Support\\Facades\\Hash::make('THAY_BANG_MAT_KHAU_RIENG'),
     'ho_ten' => 'Quan tri vien',
     'email' => 'admin@example.com',
-    'phone' => null,
+    'phone' => 'THAY_BANG_SO_DIEN_THOAI_RIENG',
     'vaitro' => 'QUAN_TRI',
     'trangthai' => 'HOAT_DONG',
     'phai_doimatkhau' => true,
@@ -50,7 +50,7 @@ Ten file va class do du an tao duoc doi sang tieng Viet khong dau. Ten bat buoc 
 - Lich hen duoc tu dong xac nhan (`DA_XAC_NHAN`) ngay khi dat thanh cong; khong can le tan duyet.
 - Neu chon dich vu kham (`MEDICAL`/`BOTH`), he thong tao/gan hang doi `CHO_KHAM`; khi phieu kham hoan tat, lich hen loai `MEDICAL` chuyen `DA_HOAN_THANH`.
 - Trang thai lich hen: `DA_XAC_NHAN`, `DA_HOAN_THANH`, `DA_HUY`.
-- Tra cuu lich hen bang so dien thoai; neu co nhieu lich, khach chon lich can xem. Lich hen duoc tu dong xac nhan ngay khi dat thanh cong; khach hang chi tra cuu thong tin.
+- Tra cuu lich hen bang so dien thoai; khach hang co the xem thong tin va huy lich dang `DA_XAC_NHAN` neu luot kham chua bat dau.
 - Ngay hen va ngay doi lich phai tu ngay hom sau tro di; backend tu kiem tra, khong chi gioi han tren giao dien.
 - Yeu cau dat lich van duoc luu trong `lich_hen_khach`; khong con trang quan ly lich hen rieng trong khu vuc noi bo.
 - Danh muc Spa tren trang khach hang lay truc tiep tu cac mat hang co `danhmuc = DICH_VU_SPA` trong `kho_hang`.
@@ -76,7 +76,7 @@ Khong dung `migrate:fresh` tren database dang co du lieu.
 ## Cap nhat dat lich va luu tru
 
 - Form dat lich tren trang chu dung hai o tich chon doc lap: **Dich vu spa** va **Kham benh**; co the chon mot hoac ca hai.
-- Tra cuu lich hen bang so dien thoai chi hien thi thong tin, khong cho sua lich.
+- Tra cuu lich hen bang so dien thoai; khach hang co the xem thong tin va huy lich dang xac nhan neu luot kham chua bat dau.
 - Phi luu tru la **50.000 VND/ngay** cho tat ca cac loai long; gia xem truoc va hoa don dung cung mot muc phi.
 - Trang long luu tru co nut **Thong tin luu tru** khi long dang co thu, hien ma/ten thu cung va ten/so dien thoai chu nuoi.
 - Long dang co thu khong the sua; long co thu hoac da co lich su luu tru khong the xoa.

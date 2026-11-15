@@ -86,7 +86,9 @@ class ThuCungController extends Controller
                 ? 'DANG_KHAM'
                 : (($p->queue_status ?? null) === 'CHO_KHAM'
                     ? 'CHO_KHAM'
-                    : (($p->queue_status ?? null) === 'DA_KHAM' ? 'DA_KHAM' : 'KHONG_KHAM')),
+                    : (($p->queue_status ?? null) === 'DA_KHAM'
+                        ? 'DA_KHAM'
+                        : (!empty($p->record_id) ? 'DA_KHAM' : 'KHONG_KHAM'))),
             'ngaykham_gannhat' => $p->ngaykham_gannhat ?? null,
             'kham_da_thanh_toan' => !empty($p->mahoadon_kham),
             'trangthai_hangdoi' => $p->queue_status ?? null,
@@ -233,7 +235,7 @@ class ThuCungController extends Controller
     public function index()
     {
         $thu_cung = $this->query()
-            ->orderByRaw("CASE WHEN latest_booking.pet_id IS NOT NULL THEN 0 WHEN latest_queue.queue_status IN ('CHO_KHAM','DANG_KHAM','DA_KHAM') THEN 1 ELSE 2 END")
+            ->orderByRaw("CASE WHEN latest_booking.pet_id IS NOT NULL THEN 0 WHEN latest_queue.queue_status IN ('CHO_KHAM','DANG_KHAM') THEN 1 ELSE 2 END")
             ->orderBy('latest_booking.ngay_hen')
             ->orderBy('latest_booking.gio_mong_muon')
             ->orderByRaw("CASE WHEN latest_queue.queue_status = 'DANG_KHAM' THEN 0 WHEN latest_queue.queue_status = 'CHO_KHAM' AND (NULLIF(TRIM(latest_queue.queue_note), '') IS NOT NULL OR NULLIF(TRIM(latest_queue.intake_note), '') IS NOT NULL) THEN 1 WHEN latest_queue.queue_status = 'CHO_KHAM' THEN 2 WHEN latest_queue.queue_status = 'DA_KHAM' THEN 3 ELSE 4 END")

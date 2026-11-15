@@ -23,6 +23,12 @@ use App\Http\Controllers\Api\TiemChungController;
 |--------------------------------------------------------------------------
 */
 
+Route::get('/v1/public/owners', [KhachHangController::class, 'timChuNuoi'])->middleware('throttle:20,1');
+Route::get('/v1/public/spa-services', [KhachHangController::class, 'dichVuSpa'])->middleware('throttle:30,1');
+Route::post('/v1/public/bookings', [KhachHangController::class, 'datLich'])->middleware('throttle:8,1');
+Route::get('/v1/public/bookings/lookup', [KhachHangController::class, 'traCuu'])->middleware('throttle:15,1');
+Route::put('/v1/public/bookings/update', [KhachHangController::class, 'capNhat'])->middleware('throttle:8,1');
+
 Route::post('/v1/auth/login', [XacThucController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/v1/auth/forgot-password', [XacThucController::class, 'forgotPassword'])->middleware('throttle:3,1');
 Route::post('/v1/auth/reset-password', [XacThucController::class, 'resetForgottenPassword'])->middleware('throttle:5,1');

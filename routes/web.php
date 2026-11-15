@@ -2,9 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::view('/', 'khach-hang')->name('home');
 
 Route::view('/login', 'auth.dang-nhap')->name('login');
 Route::view('/forgot-password', 'auth.quen-mat-khau')->name('forgot-password');

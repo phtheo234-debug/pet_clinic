@@ -54,6 +54,12 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             alertBox.textContent = error.message || "Không thể đổi mật khẩu.";
             alertBox.classList.remove("d-none");
+            if (typeof window.setFormFieldError === "function") {
+                const target = /hiện tại/i.test(alertBox.textContent)
+                    ? document.getElementById("mat_khau_cu")
+                    : document.getElementById("mat_khau_moi");
+                window.setFormFieldError(target, alertBox.textContent);
+            }
         } finally {
             button.disabled = false;
             button.textContent = "Xác nhận đổi mật khẩu";

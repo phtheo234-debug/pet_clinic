@@ -61,6 +61,8 @@
         }
     }
 
+    window.setFormFieldError = setError;
+
     function clearError(field) {
         field.classList.remove("is-invalid");
         const feedback = getFeedback(field);
@@ -124,7 +126,8 @@
             const field = candidates.find(item =>
                 item.name === key || item.name === simpleKey || item.id === key || item.id === simpleKey ||
                 normalize(item.name) === normalizedKey || normalize(item.id) === normalizedKey ||
-                normalize(item.id).includes(normalizedKey)
+                normalize(item.id).includes(normalizedKey) ||
+                normalize(item.closest(".form-group")?.querySelector("label")?.textContent).includes(normalizedKey)
             );
             if (field) setError(field, message);
         });

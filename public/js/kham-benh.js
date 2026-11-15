@@ -559,6 +559,16 @@ function renderMedicalHistory(records) {
 }
 
 
+function renderMedicalQueueNotes(item, emphasize = false) {
+    const notes = [
+        item?.ghi_chu ? String(item.ghi_chu) : "",
+        item?.ghi_chu_tiep_nhan ? "Ghi chú tiếp nhận: " + String(item.ghi_chu_tiep_nhan) : ""
+    ].filter(Boolean);
+    if (!notes.length) return '<div class="small text-muted mt-1">Không có ghi chú ưu tiên</div>';
+    return notes.map(note => '<div class="mt-1 ' + (emphasize ? 'text-danger font-weight-bold' : '') + '">' +
+        '<i class="fas fa-exclamation-circle mr-1"></i>' + escapeMedicalHtml(note) + '</div>').join("");
+}
+
 async function loadMedicalQueue() {
     const body = document.getElementById("medicalQueueBody");
     const featured = document.getElementById("medicalQueueFeatured");
@@ -584,7 +594,7 @@ async function loadMedicalQueue() {
         }
         if (featured) {
             featured.innerHTML = next
-                ? '<div class="d-flex flex-wrap justify-content-between align-items-center"><div><div class="small text-uppercase font-weight-bold text-danger mb-1">' + (active ? 'CA ĐANG ĐƯỢC KHÁM' : 'THÚ CƯNG TIẾP THEO') + '</div><h5 class="mb-1 font-weight-bold">' + escapeMedicalHtml(next.ten_thucung || 'Chưa có tên') + ' <small class="text-muted">(' + escapeMedicalHtml(next.mathucung || '') + ')</small></h5><div>' + escapeMedicalHtml(next.ten_chu_nuoi || 'Chưa có thông tin chủ nuôi') + '</div>' + (next.ghi_chu ? '<div class="mt-2 text-danger font-weight-bold"><i class="fas fa-exclamation-circle mr-1"></i>' + escapeMedicalHtml(next.ghi_chu) + '</div>' : '<div class="small text-muted mt-1">Không có ghi chú ưu tiên</div>') + '</div><span class="badge ' + (active ? 'badge-warning' : 'badge-danger') + ' p-2">' + (active ? 'Đang khám' : 'Ưu tiên tiếp theo') + '</span></div>'
+                ? '<div class="d-flex flex-wrap justify-content-between align-items-center"><div><div class="small text-uppercase font-weight-bold text-danger mb-1">' + (active ? 'CA ĐANG ĐƯỢC KHÁM' : 'THÚ CƯNG TIẾP THEO') + '</div><h5 class="mb-1 font-weight-bold">' + escapeMedicalHtml(next.ten_thucung || 'Chưa có tên') + ' <small class="text-muted">(' + escapeMedicalHtml(next.mathucung || '') + ')</small></h5><div>' + escapeMedicalHtml(next.ten_chu_nuoi || 'Chưa có thông tin chủ nuôi') + '</div>' + renderMedicalQueueNotes(next, true) + '</div><span class="badge ' + (active ? 'badge-warning' : 'badge-danger') + ' p-2">' + (active ? 'Đang khám' : 'Ưu tiên tiếp theo') + '</span></div>'
                 : '<span class="text-muted">Hiện không có thú cưng chờ khám.</span>';
         }
         if (selectButton) {
@@ -600,13 +610,13 @@ async function loadMedicalQueue() {
             DA_KHAM: '<span class="badge badge-success">Đã khám</span>'
         };
         body.innerHTML = rows.length ? rows.map(item => {
-            const isPriority = item.queue_status === "CHO_KHAM" && !!String(item.ghi_chu || "").trim();
+            const isPriority = item.queue_status === "CHO_KHAM" && (!!String(item.ghi_chu || "").trim() || !!String(item.ghi_chu_tiep_nhan || "").trim());
             const rowClass = item.queue_status === "DANG_KHAM" ? "table-warning" : (isPriority ? "table-danger" : "");
             return '<tr class="' + rowClass + '">' +
                 '<td><strong>' + escapeMedicalHtml(item.ten_thucung || "-") + '</strong><br><small class="text-muted">' + escapeMedicalHtml(item.mathucung || "") + ' · ' + escapeMedicalHtml(item.loai || "") + ' ' + escapeMedicalHtml(item.giong || "") + '</small></td>' +
                 '<td>' + escapeMedicalHtml(item.ten_chu_nuoi || "-") + '<br><small class="text-muted">' + escapeMedicalHtml(item.sdt_chu_nuoi || "") + '</small></td>' +
                 '<td>' + (statusLabels[item.queue_status] || '<span class="badge badge-secondary">Chưa khám</span>') + '</td>' +
-                '<td>' + (item.ghi_chu ? '<span class="' + (isPriority ? 'text-danger font-weight-bold' : '') + '">' + escapeMedicalHtml(item.ghi_chu) + '</span>' : '<span class="text-muted">—</span>') + '</td></tr>';
+                '<td>' + renderMedicalQueueNotes(item, isPriority) + '</td></tr>';
         }).join("") : '<tr><td colspan="4" class="text-center text-muted">Chưa có thú cưng trong danh sách chờ khám hôm nay.</td></tr>';
     } catch (error) {
         if (featured) featured.innerHTML = '<span class="text-danger">' + escapeMedicalHtml(error.message || "Không tải được danh sách chờ") + '</span>';

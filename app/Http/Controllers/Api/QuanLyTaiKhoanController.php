@@ -11,6 +11,28 @@ use Illuminate\Validation\Rule;
 class QuanLyTaiKhoanController extends Controller
 {
     /**
+     * Kiểm tra một thông tin đăng nhập có bị tài khoản KHÁC sử dụng
+     * làm tên đăng nhập hoặc mật khẩu hay chưa.
+     */
+    private function conflictsWithOtherCredentials(string $value, ?int $ignoreUserId = null): bool
+    {
+        $accounts = NguoiDung::select('user_id', 'username', 'mat_khau')->get();
+
+        foreach ($accounts as $account) {
+            if ($ignoreUserId !== null && (int) $account->user_id === $ignoreUserId) {
+                continue;
+            }
+
+            if (strcasecmp($value, (string) $account->username) === 0
+                || Hash::check($value, $account->mat_khau)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Sinh mật khẩu tạm ngẫu nhiên gồm chữ, số và ký tự đặc biệt.
      */
     private function generateTemporaryPassword(string $username = ''): string
@@ -34,7 +56,8 @@ class QuanLyTaiKhoanController extends Controller
                 [$characters[$i], $characters[$j]] = [$characters[$j], $characters[$i]];
             }
             $password = implode('', $characters);
-        } while ($username !== '' && strcasecmp($password, $username) === 0);
+        } while (($username !== '' && strcasecmp($password, $username) === 0)
+            || $this->conflictsWithOtherCredentials($password));
 
         return $password;
     }
@@ -132,6 +155,10 @@ class QuanLyTaiKhoanController extends Controller
 
         ]);
 
+        if ($this->conflictsWithOtherCredentials($fields['username'])) {
+            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập này đang được dùng làm mật khẩu của tài khoản khác. Vui lòng chọn tên khác.'], 422);
+        }
+
         $temporaryPassword = $this->generateTemporaryPassword($fields['username']);
 
         $user = NguoiDung::create([
@@ -177,8 +204,8 @@ class QuanLyTaiKhoanController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'vaitro' => ['required', Rule::in(['BAC_SI', 'NHAN_VIEN'])],
         ]);
-        if (Hash::check($fields['username'], $user->mat_khau)) {
-            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập không được trùng với mật khẩu của tài khoản. Vui lòng đổi mật khẩu trước hoặc chọn tên đăng nhập khác.'], 422);
+        if ($this->conflictsWithOtherCredentials($fields['username'], (int) $user->user_id)) {
+            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập này đang được dùng làm mật khẩu của tài khoản khác. Vui lòng chọn tên khác.'], 422);
         }
         $user->fill($fields);
         $user->save();

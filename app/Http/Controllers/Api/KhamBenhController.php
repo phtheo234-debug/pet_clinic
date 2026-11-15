@@ -203,7 +203,6 @@ class KhamBenhController extends Controller
                     $bookings = DB::table('lich_hen_khach')
                         ->whereIn('queue_id', $completedQueues)
                         ->where('trang_thai', 'DA_XAC_NHAN')
-                        ->whereDate('ngay_hen', '<=', now()->toDateString())
                         ->get();
 
                     foreach ($bookings as $booking) {

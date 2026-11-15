@@ -47,6 +47,7 @@ Ten file va class do du an tao duoc doi sang tieng Viet khong dau. Ten bat buoc 
 - Ho tro dat lich kham, Spa hoac ca hai; chon ngay, ca sang/chieu va gio mong muon.
 - Yeu cau kham duoc dua vao `hang_doi_kham`; `created_by` cho phep NULL de phan biet lich hen tu khach hang voi luot do nhan vien tiep nhan.
 - Tra cuu/chinh sua lich hen can ca so dien thoai va ma lich hen duoc cap khi dat lich. Chi lich dang cho xac nhan moi duoc chinh sua truc tuyen.
+- Nhan vien/le tan va quan tri xem, xac nhan, huy lich tai `/appointments`; co the hoan tat sau khi ca kham da o trang thai `DA_KHAM` hoac sau khi hoan tat dich vu Spa.
 - Danh muc Spa tren trang khach hang lay truc tiep tu cac mat hang co `danhmuc = DICH_VU_SPA` trong `kho_hang`.
 
 Sau khi cap nhat ma nguon, chay:

@@ -19,7 +19,7 @@ return new class extends Migration
 
             $table->string('ho_ten', 100);
             $table->string('email', 100)->unique();
-            $table->string('phone', 20)->nullable();
+            $table->string('phone', 20)->unique();
 
             $table->enum('vaitro', [
                 'QUAN_TRI',

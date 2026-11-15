@@ -196,17 +196,6 @@ function extractList(res) {
     return [];
 }
 
-// Ánh xạ Hướng xử lý trên giao diện sang đúng ENUM trangthai của Backend
-function mapActionToStatus(huongXuLy) {
-    const map = {
-        OUTPATIENT: "CHUA_KHAM",
-        INPATIENT: "CHUA_KHAM",
-        SURGERY: "CHUA_KHAM",
-        TRANSFER: "CHUYEN_VIEN",
-    };
-    return map[huongXuLy] || "DANG_DIEU_TRI";
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
     initPage();
     await Promise.all([loadPetsDropdown(), loadMedicalRecords(), loadMedicalInventory(), loadMedicalVaccinationTypes()]);

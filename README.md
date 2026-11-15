@@ -67,3 +67,12 @@ php artisan optimize:clear
 ```
 
 Khong dung `migrate:fresh` tren database dang co du lieu.
+
+
+## Cap nhat dat lich va luu tru
+
+- Form dat lich tren trang chu dung hai o tich chon doc lap: **Dich vu spa** va **Kham benh**; co the chon mot hoac ca hai.
+- Tra cuu lich hen bang so dien thoai chi hien thi thong tin, khong cho sua lich.
+- Phi luu tru la **50.000 VND/ngay** cho tat ca cac loai long; gia xem truoc va hoa don dung cung mot muc phi.
+- Trang long luu tru co nut **Thong tin luu tru** khi long dang co thu, hien ma/ten thu cung va ten/so dien thoai chu nuoi.
+- Long dang co thu khong the sua; long co thu hoac da co lich su luu tru khong the xoa.

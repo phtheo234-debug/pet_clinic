@@ -177,54 +177,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("inNam").addEventListener("click", () => report && printReport("DOANH THU THEO NĂM", yearRows()));
 
     const loadInventoryAlerts = async () => {
-        const dateText = value => value ? formatDate(value) : "-";
         try {
             const response = await apiRequest("/analytics/inventory-alerts");
-            const data = response.data || {};
-            $("countSapHetHan").textContent = data.so_sap_het_han || 0;
-            $("countDaHetHan").textContent = data.so_da_het_han || 0;
-
-            const soonBody = $("tableSapHetHan");
-            soonBody.replaceChildren();
-            (data.sap_het_han || []).forEach(item => {
-                const tr = document.createElement("tr");
-                [item.ten_sanpham + " (" + (categoryNames[item.danhmuc] || item.danhmuc) + ")",
-                    item.solo, Number(item.soluong).toLocaleString("vi-VN"), dateText(item.ngayhethan)]
-                    .forEach(value => tr.appendChild(makeCell(value)));
-                soonBody.appendChild(tr);
-            });
-            if (!soonBody.children.length) {
-                const tr = document.createElement("tr"); const td = makeCell("Không có lô hàng sắp hết hạn.");
-                td.colSpan = 4; td.className = "text-center text-muted"; tr.appendChild(td); soonBody.appendChild(tr);
-            }
-
-            const expiredBody = $("tableDaHetHan");
-            expiredBody.replaceChildren();
-            (data.da_het_han || []).forEach(item => {
-                const tr = document.createElement("tr");
-                [item.ten_sanpham + " (" + (categoryNames[item.danhmuc] || item.danhmuc) + ")",
-                    item.solo, Number(item.soluong).toLocaleString("vi-VN"), dateText(item.ngayhethan)]
-                    .forEach(value => tr.appendChild(makeCell(value)));
-                const action = document.createElement("td");
-                const button = document.createElement("button");
-                button.type = "button"; button.className = "btn btn-sm btn-outline-danger"; button.textContent = "Xóa lô";
-                button.addEventListener("click", async () => {
-                    if (!confirm("Xóa lô đã hết hạn này khỏi danh sách kho?")) return;
-                    try {
-                        await apiRequest("/admin/inventory/batches/" + Number(item.batch_id), { method: "DELETE" });
-                        await loadInventoryAlerts();
-                    } catch (error) { alert("Không thể xóa lô: " + error.message); }
-                });
-                action.appendChild(button); tr.appendChild(action); expiredBody.appendChild(tr);
-            });
-            if (!expiredBody.children.length) {
-                const tr = document.createElement("tr"); const td = makeCell("Không có lô hàng đã hết hạn.");
-                td.colSpan = 5; td.className = "text-center text-muted"; tr.appendChild(td); expiredBody.appendChild(tr);
-            }
-
-            const stores = data.kho_sap_het || {};
+            const stores = response.data?.kho_sap_het || {};
             const storesBox = $("danhSachKhoSapHet");
             storesBox.replaceChildren();
+
             Object.entries(stores).forEach(([key, store]) => {
                 const col = document.createElement("div");
                 col.className = "col-md-6 col-xl-3 mb-2";
@@ -233,15 +191,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 button.className = "btn btn-outline-warning btn-block text-left h-100";
                 button.innerHTML = "<strong></strong><br><small></small>";
                 button.querySelector("strong").textContent = store.ten_kho;
-                button.querySelector("small").textContent = (store.so_mat_hang || 0) + " mặt hàng sắp hết";
+                button.querySelector("small").textContent = (store.so_mat_hang || 0) + " mặt hàng còn tối đa 5 đơn vị";
                 button.addEventListener("click", () => {
                     selectedStore = key;
                     storeRows = store.items || [];
                     $("tenKhoSapHet").textContent = store.ten_kho;
-                    const body = $("bangChiTietKhoSapHet"); body.replaceChildren();
+                    const body = $("bangChiTietKhoSapHet");
+                    body.replaceChildren();
                     if (!storeRows.length) {
-                        const tr = document.createElement("tr"); const td = makeCell("Kho này chưa có mặt hàng sắp hết.");
-                        td.colSpan = 3; td.className = "text-center text-muted"; tr.appendChild(td); body.appendChild(tr);
+                        const tr = document.createElement("tr");
+                        const td = makeCell("Kho này chưa có mặt hàng sắp hết.");
+                        td.colSpan = 3;
+                        td.className = "text-center text-muted";
+                        tr.appendChild(td);
+                        body.appendChild(tr);
                     } else {
                         storeRows.forEach(item => {
                             const tr = document.createElement("tr");
@@ -252,15 +215,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                         });
                     }
                     $("chiTietKhoSapHet").classList.remove("d-none");
-                    $("chiTietKhoSapHet").scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    $("chiTietKhoSapHet").scrollIntoView({behavior:"smooth", block:"nearest"});
                 });
-                col.appendChild(button); storesBox.appendChild(col);
+                col.appendChild(button);
+                storesBox.appendChild(col);
             });
-            $("xuatKhoSapHet").onclick = () => selectedStore && exportCsv("hang-sap-het-" + selectedStore.toLowerCase() + ".csv",
+
+            $("xuatKhoSapHet").onclick = () => selectedStore && exportCsv(
+                "hang-sap-het-" + selectedStore.toLowerCase() + ".csv",
                 "HÀNG SẮP HẾT - " + $("tenKhoSapHet").textContent,
-                [["Mã", "Tên", "Số lượng"], ...storeRows.map(item => [item.ma, item.ten, item.so_luong])]);
-            $("inKhoSapHet").onclick = () => selectedStore && printReport("HÀNG SẮP HẾT - " + $("tenKhoSapHet").textContent,
-                [["Mã", "Tên", "Số lượng"], ...storeRows.map(item => [item.ma + " - " + item.ten, item.so_luong])]);
+                [["Mã", "Tên", "Số lượng"], ...storeRows.map(item => [item.ma, item.ten, item.so_luong])]
+            );
+            $("inKhoSapHet").onclick = () => selectedStore && printReport(
+                "HÀNG SẮP HẾT - " + $("tenKhoSapHet").textContent,
+                [["Mã", "Tên", "Số lượng"], ...storeRows.map(item => [item.ma + " - " + item.ten, item.so_luong])]
+            );
         } catch (error) {
             $("danhSachKhoSapHet").textContent = "Không tải được danh sách kho sắp hết hàng.";
         }

@@ -258,6 +258,7 @@ class ThuCungController extends Controller
             'gender'         => 'nullable|in:DUC,CAI,CHUA_XAC_DINH',
             'dob'            => 'nullable|date',
             'weight'         => 'required|numeric|min:0.1|max:999',
+            'ghi_chu_kham'   => 'nullable|string|max:2000',
         ];
 
         if ($hasOwnerId) {

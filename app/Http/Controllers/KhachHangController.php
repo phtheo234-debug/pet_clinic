@@ -165,4 +165,46 @@ class KhachHangController extends Controller
         }
         return response()->json(['status'=>'success','message'=>'Đã cập nhật lịch hẹn.']);
     }
+
+    /** Danh sách lịch hẹn để lễ tân/quản trị tiếp nhận. */
+    public function danhSachLichHen()
+    {
+        $rows = DB::table('lich_hen_khach as b')
+            ->join('chu_nuoi as o','o.owner_id','=','b.owner_id')
+            ->join('thu_cung as p','p.pet_id','=','b.pet_id')
+            ->leftJoin('hang_doi_kham as q','q.queue_id','=','b.queue_id')
+            ->select('b.*','o.ho_ten as owner_name','o.phone','p.ten_thucung','p.loai','p.giong',
+                'q.trangthai as queue_status')
+            ->orderByRaw("CASE WHEN b.trang_thai='CHO_XAC_NHAN' THEN 0 WHEN b.trang_thai='DA_XAC_NHAN' THEN 1 ELSE 2 END")
+            ->orderBy('b.ngay_hen')->orderBy('b.gio_mong_muon')
+            ->limit(300)->get();
+        foreach ($rows as $row) $row->spa_services = json_decode($row->dich_vu_spa,true) ?: [];
+        return response()->json(['status'=>'success','data'=>$rows]);
+    }
+
+    /** Lễ tân xác nhận, hoàn tất hoặc hủy yêu cầu đặt lịch. */
+    public function capNhatTrangThai(Request $request, int $id)
+    {
+        $data=$request->validate(['trang_thai'=>'required|in:DA_XAC_NHAN,DA_HOAN_THANH,DA_HUY']);
+        return DB::transaction(function () use ($id,$data) {
+            $booking=DB::table('lich_hen_khach')->where('id',$id)->lockForUpdate()->first();
+            abort_if(!$booking,404,'Không tìm thấy lịch hẹn.');
+            if (in_array($booking->trang_thai,['DA_HOAN_THANH','DA_HUY'],true))
+                return response()->json(['message'=>'Lịch hẹn đã kết thúc, không thể thay đổi trạng thái.'],409);
+            if ($data['trang_thai']==='DA_HOAN_THANH' && $booking->queue_id) {
+                $queue=DB::table('hang_doi_kham')->where('queue_id',$booking->queue_id)->first();
+                if ($queue && $queue->trangthai!=='DA_KHAM')
+                    return response()->json(['message'=>'Chỉ hoàn tất lịch khám sau khi bác sĩ hoàn thành lượt khám.'],409);
+            }
+            if ($data['trang_thai']==='DA_HUY' && $booking->queue_id) {
+                $queue=DB::table('hang_doi_kham')->where('queue_id',$booking->queue_id)->lockForUpdate()->first();
+                if ($queue && $queue->trangthai==='DANG_KHAM')
+                    return response()->json(['message'=>'Thú cưng đang được khám, không thể hủy lịch.'],409);
+                if ($queue && $queue->trangthai==='CHO_KHAM')
+                    DB::table('hang_doi_kham')->where('queue_id',$queue->queue_id)->delete();
+            }
+            DB::table('lich_hen_khach')->where('id',$id)->update(['trang_thai'=>$data['trang_thai'],'updated_at'=>now()]);
+            return response()->json(['status'=>'success','message'=>'Đã cập nhật trạng thái lịch hẹn.']);
+        });
+    }
 }

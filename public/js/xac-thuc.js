@@ -98,6 +98,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 ? "/change-password"
                 : "/dashboard");
         } catch (err) {
+            if (typeof window.setFormFieldError === "function") {
+                window.setFormFieldError(document.getElementById("username"), "Tên đăng nhập hoặc mật khẩu không chính xác.");
+                window.setFormFieldError(document.getElementById("mat_khau"), "Tên đăng nhập hoặc mật khẩu không chính xác.");
+            }
             if (alertBox) {
                 alertBox.textContent = err.message;
                 alertBox.classList.remove("d-none");

@@ -7,7 +7,7 @@
 <div class="form-group"><label>Tên đăng nhập</label><input id="profileUsername" class="form-control" readonly></div>
 <div class="form-group"><label>Họ và tên</label><input id="profileName" class="form-control" required maxlength="100"></div>
 <div class="form-group"><label>Email</label><input id="profileEmail" type="email" class="form-control" maxlength="100" required></div>
-<div class="form-group"><label>Số điện thoại</label><input id="profilePhone" type="tel" class="form-control" maxlength="20" minlength="9" pattern="[0-9+().\\-\\s]{9,20}" required></div>
+<div class="form-group"><label>Số điện thoại</label><input id="profilePhone" type="tel" class="form-control" maxlength="20" minlength="9" pattern="[0-9+(). -]{9,20}" required></div>
 <button class="btn btn-primary">Lưu thông tin</button></form></div></div></div>
 <div class="col-lg-5"><div class="card shadow-sm"><div class="card-header bg-white font-weight-bold">Đổi mật khẩu</div><div class="card-body">
 <div id="passwordAlert" class="alert d-none"></div><form id="profilePasswordForm">

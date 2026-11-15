@@ -258,7 +258,7 @@ async function openPetDetail(petId) {
         };
         const currentExamStatus = pet.trangthai_kham || "KHONG_KHAM";
         const historyRows = history.length ? history.map((item) => `
-            <tr><td>${escapePetHtml(item.record_id)}</td><td>${formatPetDate(item.ngaykham)}</td><td>${escapePetHtml(item.chandoan || "-")}</td><td>${escapePetHtml(item.ten_phauthuat || item.huongxuly || "-")}</td><td>${escapePetHtml(item.trangthai || "-")}</td><td>${escapePetHtml(item.mahoadon || (item.invoice_id ? "Đã thanh toán" : "Chưa thanh toán"))}</td></tr>
+            <tr><td>${escapePetHtml(item.record_id)}</td><td>${formatPetDate(item.ngaykham)}</td><td>${escapePetHtml(item.chandoan || "-")}</td><td>${escapePetHtml(item.ten_phauthuat || item.huongxuly || "-")}</td><td>${escapePetHtml(item.huong_xuly || "-")}</td><td>${escapePetHtml(item.mahoadon || (item.invoice_id ? "Đã thanh toán" : "Chưa thanh toán"))}</td></tr>
         `).join("") : '<tr><td colspan="6" class="text-center text-muted">Chưa có lịch sử khám bệnh</td></tr>';
 
         const examStatusControl = `<span class="badge ${currentExamStatus === "DA_KHAM" ? "badge-success" : currentExamStatus === "DANG_KHAM" ? "badge-warning" : currentExamStatus === "CHO_KHAM" ? "badge-info" : "badge-secondary"}">${escapePetHtml(examStatusLabels[currentExamStatus] || "Không khám")}</span>`;
@@ -286,7 +286,7 @@ async function openPetDetail(petId) {
                             <button type="button" id="btnUpdatePetWeight" class="btn btn-primary btn-block">Lưu cân nặng</button>
                         </div>
                     </div>
-                    <small class="text-muted">Mỗi lần cập nhật sẽ được ghi thành một bản ghi mới trong lịch sử cân nặng.</small>
+                    <small class="text-muted">Cân nặng này là giá trị hiện tại và sẽ được cập nhật trực tiếp vào hồ sơ thú cưng.</small>
                 </div>
             </div>
 

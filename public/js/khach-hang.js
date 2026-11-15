@@ -173,8 +173,8 @@ function renderLookupResults() {
         '</strong> · ' + esc(booking.ten_thucung) + '<br><small class="text-muted">' +
         esc(booking.ngay_hen) + ' · ' + (booking.ca_hen === 'SANG' ? 'Ca sáng' : 'Ca chiều') +
         ' · ' + esc(({MEDICAL:'Khám bệnh', SPA:'Dịch vụ Spa', BOTH:'Dịch vụ Spa và Khám bệnh'})[booking.loai_dich_vu] || booking.loai_dich_vu) +
-        ' · ' + esc(({DA_XAC_NHAN:'Đã xác nhận',DA_HOAN_THANH:'Đã hoàn thành',DA_HUY:'Đã hủy'})[booking.trang_thai] || booking.trang_thai) + '</small></div><button type="button" class="btn btn-sm btn-outline-primary" data-select-booking="' +
-        Number(booking.id) + '">Xem thông tin</button></div>'
+        ' · ' + esc(({DA_XAC_NHAN:'Đã xác nhận',DA_HOAN_THANH:'Đã hoàn thành',DA_HUY:'Đã hủy'})[booking.trang_thai] || booking.trang_thai) + '</small></div><div class="d-flex flex-column"><button type="button" class="btn btn-sm btn-outline-primary mb-1" data-select-booking="' +
+        Number(booking.id) + '">Xem thông tin</button>' + (booking.trang_thai === 'DA_XAC_NHAN' ? '<button type="button" class="btn btn-sm btn-outline-danger" data-cancel-booking="' + Number(booking.id) + '">Hủy lịch</button>' : '') + '</div></div>'
     ).join('');
 
     let pagination = '';
@@ -219,7 +219,7 @@ function selectBooking(id) {
     $id('bookingDateInfo').textContent = 'Ngày hẹn: ' + booking.ngay_hen +
         ' · ' + (booking.ca_hen === 'SANG' ? 'Ca sáng (07:00–11:00)' : 'Ca chiều (14:00–17:00)') +
         ' · Giờ mong muốn: ' + String(booking.gio_mong_muon || '').slice(0, 5);
-    $id('bookingStatus').textContent = 'Trạng thái: ' + booking.trang_thai;
+    $id('bookingStatus').textContent = 'Trạng thái: ' + (({DA_XAC_NHAN:'Đã xác nhận',DA_HOAN_THANH:'Đã hoàn thành',DA_HUY:'Đã hủy'})[booking.trang_thai] || booking.trang_thai);
     $id('bookingNoteInfo').textContent = booking.ghi_chu_kham ? 'Ghi chú khám: ' + booking.ghi_chu_kham : 'Ghi chú khám: Không có';
     $id('bookingDetails').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -260,6 +260,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (pageButton && !pageButton.disabled) {
             lookupPage = Number(pageButton.dataset.lookupPage);
             renderLookupResults();
+            return;
+        }
+        const cancelButton = event.target.closest('[data-cancel-booking]');
+        if (cancelButton) {
+            const id = Number(cancelButton.dataset.cancelBooking);
+            if (!confirm('Bạn có chắc muốn hủy lịch hẹn này?')) return;
+            try {
+                const result = await pubRequest('/bookings/cancel', {
+                    method: 'POST',
+                    body: JSON.stringify({booking_id: id, phone: $id('lookupPhone').value.trim()})
+                });
+                showMsg('lookupMessage', result.message || 'Đã hủy lịch hẹn.', true);
+                await lookup({preventDefault() {}});
+            } catch (error) { showMsg('lookupMessage', error.message); }
             return;
         }
         const button = event.target.closest('[data-select-booking]');

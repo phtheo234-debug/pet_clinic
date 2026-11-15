@@ -202,10 +202,6 @@ class QuanLyKhoController extends Controller
             'donvitinh' => $fields['donvitinh'] ?? '',
             'soluongton' => $fields['danhmuc'] === 'DO_DUNG' ? (int) ($fields['soluong'] ?? 0) : 0,
             'dongia' => $fields['dongia'],
-            // Không còn sử dụng tồn kho tối thiểu; giữ cột cũ ở mức 0 để tương thích DB.
-            'tonkhotoithieu' => 0,
-            'lieu_mg_kg' => null,
-            'mg_moi_don_vi' => null,
         ];
     }
 }

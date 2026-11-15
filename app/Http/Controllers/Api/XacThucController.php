@@ -79,13 +79,6 @@ class XacThucController extends Controller
             'mat_khau_moi' => ['required', 'string', 'min:6', 'max:10', 'regex:/^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/', 'confirmed'],
         ]);
 
-        if (strcasecmp($fields['mat_khau_moi'], $user->username) === 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Mật khẩu không được trùng với tên đăng nhập.',
-            ], 422);
-        }
-
         $key = 'password_reset:' . strtolower($fields['email']);
         $hashedCode = Cache::get($key);
         $user = NguoiDung::where('email', $fields['email'])->where('trangthai', 'HOAT_DONG')->first();
@@ -94,6 +87,13 @@ class XacThucController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Mã xác nhận không đúng hoặc đã hết hạn.',
+            ], 422);
+        }
+
+        if (strcasecmp($fields['mat_khau_moi'], $user->username) === 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Mật khẩu không được trùng với tên đăng nhập.',
             ], 422);
         }
 

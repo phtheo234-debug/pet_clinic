@@ -949,7 +949,6 @@ class ThanhToanController extends Controller
                 if ($don_thuoc->isNotEmpty()) DB::table('don_thuoc')->whereIn('prescription_id',$don_thuoc->pluck('prescription_id'))->update(['invoice_id'=>$invoiceId]);
                 if ($records->isNotEmpty()) {
                     DB::table('phieu_kham')->whereIn('record_id',$records->pluck('record_id'))->update([
-                        'trangthai' => 'HOAN_THANH',
                         'invoice_id' => $invoiceId,
                     ]);
                 }

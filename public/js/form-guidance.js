@@ -118,10 +118,13 @@
         Object.entries(errors).forEach(([key, messages]) => {
             const message = Array.isArray(messages) ? messages[0] : String(messages);
             const simpleKey = key.split(".").pop();
+            const normalize = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            const normalizedKey = normalize(simpleKey);
             const candidates = form ? Array.from(form.querySelectorAll("input, textarea")) : [];
             const field = candidates.find(item =>
                 item.name === key || item.name === simpleKey || item.id === key || item.id === simpleKey ||
-                item.id.toLowerCase().includes(simpleKey.toLowerCase())
+                normalize(item.name) === normalizedKey || normalize(item.id) === normalizedKey ||
+                normalize(item.id).includes(normalizedKey)
             );
             if (field) setError(field, message);
         });

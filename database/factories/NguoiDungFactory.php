@@ -11,13 +11,38 @@ use Illuminate\Support\Facades\Hash;
  */
 class NguoiDungFactory extends Factory
 {
-    protected static ?string $password = null;
+    private function generatePassword(string $username): string
+    {
+        $letters = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+        $numbers = '23456789';
+        $specials = '!@#$%*?_-';
+        $all = $letters . $numbers . $specials;
+        $characters = [
+            $letters[random_int(0, strlen($letters) - 1)],
+            $numbers[random_int(0, strlen($numbers) - 1)],
+            $specials[random_int(0, strlen($specials) - 1)],
+        ];
+        while (count($characters) < 9) {
+            $characters[] = $all[random_int(0, strlen($all) - 1)];
+        }
+        for ($i = count($characters) - 1; $i > 0; $i--) {
+            $j = random_int(0, $i);
+            [$characters[$i], $characters[$j]] = [$characters[$j], $characters[$i]];
+        }
+        $password = implode('', $characters);
+
+        return strcasecmp($password, $username) === 0
+            ? $this->generatePassword($username)
+            : $password;
+    }
 
     public function definition(): array
     {
+        $username = fake()->unique()->userName();
+
         return [
-            'username' => fake()->unique()->userName(),
-            'mat_khau' => static::$password ??= Hash::make('123456'),
+            'username' => $username,
+            'mat_khau' => Hash::make($this->generatePassword($username)),
             'ho_ten' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->numerify('09########'),

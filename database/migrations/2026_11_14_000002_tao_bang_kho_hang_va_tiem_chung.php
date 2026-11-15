@@ -15,10 +15,7 @@ return new class extends Migration
             $table->enum('danhmuc', ['THUOC', 'VAC_XIN', 'THUC_AN', 'DO_DUNG', 'DICH_VU_SPA']);
             $table->string('donvitinh', 20);
             $table->decimal('dongia', 12, 2);
-            $table->decimal('lieu_mg_kg', 10, 2)->nullable();
-            $table->decimal('mg_moi_don_vi', 10, 2)->nullable();
             $table->unsignedInteger('soluongton')->default(0);
-            $table->unsignedInteger('tonkhotoithieu')->default(10);
         });
 
         Schema::create('lo_hang', function (Blueprint $table) {

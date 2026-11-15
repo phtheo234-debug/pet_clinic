@@ -64,6 +64,9 @@ async function apiRequest(endpoint, options = {}) {
             throw new Error(result.message);
         }
         if (result.errors) {
+            if (typeof window.showFormValidationErrors === "function") {
+                window.showFormValidationErrors(result.errors);
+            }
             const firstError = Object.values(result.errors).flat()[0];
             throw new Error(firstError || result.message);
         }

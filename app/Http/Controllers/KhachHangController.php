@@ -152,5 +152,56 @@ class KhachHangController extends Controller
         return response()->json(['status' => 'success', 'data' => $bookings]);
     }
 
+    /** Khach hang huy lich da xac nhan bang so dien thoai da dang ky. */
+    public function huyLich(Request $request)
+    {
+        $data = $request->validate([
+            'booking_id' => 'required|integer|min:1',
+            'phone' => 'required|string|max:20',
+        ]);
+
+        return DB::transaction(function () use ($data) {
+            $booking = DB::table('lich_hen_khach as b')
+                ->join('chu_nuoi as o', 'o.owner_id', '=', 'b.owner_id')
+                ->where('b.id', $data['booking_id'])
+                ->where('o.phone', trim($data['phone']))
+                ->select('b.*')
+                ->lockForUpdate()
+                ->first();
+
+            if (!$booking) {
+                return response()->json(['status' => 'error', 'message' => 'Không tìm thấy lịch hẹn phù hợp với số điện thoại.'], 404);
+            }
+            if ($booking->trang_thai !== 'DA_XAC_NHAN') {
+                return response()->json(['status' => 'error', 'message' => 'Chỉ có thể hủy lịch hẹn đang được xác nhận.'], 409);
+            }
+
+            if ($booking->queue_id) {
+                $queue = DB::table('hang_doi_kham')->where('queue_id', $booking->queue_id)->lockForUpdate()->first();
+                if ($queue && in_array($queue->trangthai, ['DANG_KHAM', 'DA_KHAM'], true)) {
+                    return response()->json(['status' => 'error', 'message' => 'Lượt khám đã bắt đầu hoặc hoàn tất, không thể hủy lịch trực tuyến.'], 409);
+                }
+
+                $otherBookings = DB::table('lich_hen_khach')
+                    ->where('queue_id', $booking->queue_id)
+                    ->where('id', '<>', $booking->id)
+                    ->where('trang_thai', 'DA_XAC_NHAN')
+                    ->count();
+
+                if ($queue && $queue->created_by === null && $queue->trangthai === 'CHO_KHAM' && $otherBookings === 0) {
+                    DB::table('hang_doi_kham')->where('queue_id', $queue->queue_id)->delete();
+                }
+            }
+
+            DB::table('lich_hen_khach')->where('id', $booking->id)->update([
+                'trang_thai' => 'DA_HUY',
+                'queue_id' => null,
+                'updated_at' => now(),
+            ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Đã hủy lịch hẹn thành công.']);
+        });
+    }
+
     /** Danh sách lịch hẹn để lễ tân/quản trị tiếp nhận. */
 }

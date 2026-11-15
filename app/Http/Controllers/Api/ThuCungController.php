@@ -279,7 +279,7 @@ class ThuCungController extends Controller
             'status' => 'success',
             'data'   => array_merge($this->format($pet), [
                 'medical_history' => $medicalHistory,
-                'latest_exam' => $latestExam ? ['record_id' => $latestExam->record_id, 'trangthai' => $latestExam->trangthai, 'ngaykham' => $latestExam->ngaykham] : null,
+                'latest_exam' => $latestExam ? ['record_id' => $latestExam->record_id, 'huong_xuly' => $latestExam->huong_xuly, 'ngaykham' => $latestExam->ngaykham] : null,
             ]),
         ], 200);
     }

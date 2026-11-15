@@ -94,24 +94,93 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch (error) { notify(error.message); }
     });
 
-    document.getElementById("editUserForm").addEventListener("submit", async (event) => {
+    const editForm = document.getElementById("editUserForm");
+    const editAlert = document.getElementById("editUserAlert");
+    const editFields = {
+        username: document.getElementById("editUsername"),
+        ho_ten: document.getElementById("editName"),
+        email: document.getElementById("editEmail"),
+        phone: document.getElementById("editPhone"),
+        vaitro: document.getElementById("editRole")
+    };
+    function clearEditErrors() {
+        Object.values(editFields).forEach(input => {
+            input.classList.remove("is-invalid");
+            const feedback = input.parentElement.querySelector(".invalid-feedback");
+            if (feedback) feedback.textContent = "";
+        });
+        editAlert.className = "alert d-none";
+        editAlert.textContent = "";
+    }
+    function showEditError(field, message) {
+        const input = editFields[field];
+        if (!input) return;
+        input.classList.add("is-invalid");
+        const feedback = input.parentElement.querySelector(".invalid-feedback");
+        if (feedback) feedback.textContent = message;
+    }
+    Object.values(editFields).forEach(input => {
+        input.addEventListener("input", () => {
+            input.classList.remove("is-invalid");
+            const feedback = input.parentElement.querySelector(".invalid-feedback");
+            if (feedback) feedback.textContent = "";
+        });
+        input.addEventListener("change", () => {
+            input.classList.remove("is-invalid");
+            const feedback = input.parentElement.querySelector(".invalid-feedback");
+            if (feedback) feedback.textContent = "";
+        });
+    });
+
+    editForm.addEventListener("submit", async (event) => {
         event.preventDefault();
+        clearEditErrors();
+        const editValues = {
+            username: editFields.username.value.trim(),
+            ho_ten: editFields.ho_ten.value.trim(),
+            email: editFields.email.value.trim(),
+            phone: editFields.phone.value.trim(),
+            vaitro: editFields.vaitro.value
+        };
+        let editInvalid = false;
+        if (!editValues.username) { showEditError("username", "Vui lòng nhập tên đăng nhập."); editInvalid = true; }
+        else if (editValues.username.length > 50) { showEditError("username", "Tên đăng nhập tối đa 50 ký tự."); editInvalid = true; }
+        if (!editValues.ho_ten) { showEditError("ho_ten", "Vui lòng nhập họ tên."); editInvalid = true; }
+        else if (editValues.ho_ten.length > 100) { showEditError("ho_ten", "Họ tên tối đa 100 ký tự."); editInvalid = true; }
+        if (!editValues.email) { showEditError("email", "Vui lòng nhập email."); editInvalid = true; }
+        else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(editValues.email)) { showEditError("email", "Email không đúng định dạng."); editInvalid = true; }
+        else if (editValues.email.length > 100) { showEditError("email", "Email tối đa 100 ký tự."); editInvalid = true; }
+        if (!editValues.phone) { showEditError("phone", "Vui lòng nhập số điện thoại."); editInvalid = true; }
+        else if (!/^[0-9+().\\-\\s]{9,20}$/.test(editValues.phone)) { showEditError("phone", "Số điện thoại phải có 9–20 ký tự và chỉ gồm chữ số, dấu +, dấu ngoặc hoặc dấu gạch."); editInvalid = true; }
+        if (!editValues.vaitro) { showEditError("vaitro", "Vui lòng chọn vai trò."); editInvalid = true; }
+        if (editInvalid) {
+            editAlert.textContent = "Vui lòng kiểm tra và sửa các thông tin được đánh dấu.";
+            editAlert.className = "alert alert-danger";
+            return;
+        }
         const id = document.getElementById("editUserId").value;
         try {
             await apiRequest("/admin/users/" + id, {
                 method: "PUT",
                 body: JSON.stringify({
-                    username: document.getElementById("editUsername").value.trim(),
-                    ho_ten: document.getElementById("editName").value.trim(),
-                    email: document.getElementById("editEmail").value.trim(),
-                    phone: document.getElementById("editPhone").value.trim(),
-                    vaitro: document.getElementById("editRole").value
+                    ...editValues
                 })
             });
             $("#editUserModal").modal("hide");
             notify("Cập nhật tài khoản thành công.", true);
             await loadUsers();
-        } catch (error) { notify(error.message); }
+        } catch (error) {
+            const message = error.message || "Không thể cập nhật tài khoản.";
+            const lower = message.toLowerCase();
+            const field = lower.includes("username") ? "username"
+                : lower.includes("email") ? "email"
+                : lower.includes("phone") || lower.includes("điện thoại") ? "phone"
+                : lower.includes("ho_ten") || lower.includes("họ tên") ? "ho_ten"
+                : lower.includes("vaitro") || lower.includes("vai trò") ? "vaitro" : null;
+            if (field) showEditError(field, message);
+            editAlert.textContent = message;
+            editAlert.className = "alert alert-danger";
+        }
     });
     document.getElementById("resetPasswordForm").addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -180,7 +249,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!email) { showCreateError("email", "Vui lòng nhập email."); invalid = true; }
         else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { showCreateError("email", "Email không đúng định dạng."); invalid = true; }
         else if (email.length > 100) { showCreateError("email", "Email không được vượt quá 100 ký tự."); invalid = true; }
-        if (phone.length > 20) { showCreateError("phone", "Số điện thoại không được vượt quá 20 ký tự."); invalid = true; }
+        if (!phone) { showCreateError("phone", "Vui lòng nhập số điện thoại."); invalid = true; }
+        else if (!/^[0-9+().\\-\\s]{9,20}$/.test(phone)) { showCreateError("phone", "Số điện thoại phải có 9–20 ký tự và chỉ gồm chữ số, dấu +, dấu ngoặc hoặc dấu gạch."); invalid = true; }
         if (invalid) {
             createAlert.textContent = "Vui lòng kiểm tra và sửa các thông tin được đánh dấu.";
             createAlert.className = "alert alert-danger";

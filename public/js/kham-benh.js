@@ -282,10 +282,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         .addEventListener("input", (e) => {
             const weight = parseFloat(e.target.value) || 0;
             const doseHint = document.getElementById("doseSuggestion");
-            doseHint.innerText =
-                weight > 0
-                    ? `Gợi ý liều chuẩn (10mg/kg): ${(weight * 10).toFixed(1)} mg/lần`
-                    : "Nhập cân nặng để tự động tính liều mg/kg";
+            doseHint.innerText = weight > 0
+                ? `Cân nặng ghi nhận: ${weight.toFixed(1)} kg. Bác sĩ tự chỉ định liều và số lượng thuốc.`
+                : "Bác sĩ tự chỉ định liều và số lượng thuốc theo tình trạng thú cưng.";
         });
 
     document
@@ -356,8 +355,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const savedRecord = res?.data?.data || res?.data || {};
                 lastSavedMedicalRecordId = Number(savedRecord.record_id || savedRecord.id || 0) || null;
                 updateMedicalSections();
-                document.getElementById("doseSuggestion").innerText =
-                    "Nhập cân nặng để tự động tính liều mg/kg";
                 await loadMedicalRecords();
                 await loadMedicalQueue();
                 const printButton = document.getElementById("btnPrintCurrentMedical");

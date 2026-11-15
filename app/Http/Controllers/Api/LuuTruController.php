@@ -31,9 +31,15 @@ class LuuTruController extends Controller
                 ? (int) $syncedCage->soluonghientai
                 : 0;
             $cage->trangthai = $syncedCage->trangthai ?? $cage->trangthai;
-            $cage->thu_cung = DB::table('thu_cung')
-                ->select('pet_id', 'mathucung', 'ten_thucung', 'loai', 'giong', 'trangthai')
-                ->where('cage_id', $cage->cage_id)
+            $cage->pets = DB::table('thu_cung as p')
+                ->leftJoin('chu_nuoi as o', 'o.owner_id', '=', 'p.owner_id')
+                ->select(
+                    'p.pet_id', 'p.mathucung', 'p.ten_thucung', 'p.loai',
+                    'p.giong', 'p.trangthai',
+                    'o.ho_ten as owner_name', 'o.phone as owner_phone'
+                )
+                ->where('p.cage_id', $cage->cage_id)
+                ->orderBy('p.mathucung')
                 ->get();
             $cage->da_day = $cage->soluonghientai >= (int) $cage->succhua;
         }

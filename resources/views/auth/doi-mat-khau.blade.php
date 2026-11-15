@@ -45,7 +45,7 @@
                             <div class="form-group">
                                 <label class="font-weight-bold" for="mat_khau_moi_confirmation">Nhập lại mật khẩu mới</label>
                                 <div class="input-group">
-                                    <input type="password" id="mat_khau_moi_confirmation" class="form-control" minlength="6" autocomplete="new-password" required>
+                                    <input type="password" id="mat_khau_moi_confirmation" class="form-control" minlength="6" maxlength="10" autocomplete="new-password" required>
                                     <div class="input-group-append">
                                         <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('mat_khau_moi_confirmation', this)" aria-label="Hiện mật khẩu" title="Hiện mật khẩu"><i class="fas fa-eye"></i></button>
                                     </div>

@@ -40,7 +40,7 @@
                                         <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('mat_khau_moi', this)" aria-label="Hiện mật khẩu" title="Hiện mật khẩu"><i class="fas fa-eye"></i></button>
                                     </div>
                                 </div>
-                                <small class="form-text text-muted">Mật khẩu dài 6–10 ký tự, không có khoảng trắng; phải có chữ cái, chữ số và ký tự đặc biệt; không được trùng tên đăng nhập.</small>
+                                <small class="form-text text-muted">Mật khẩu dài 6–10 ký tự, không có khoảng trắng; phải có chữ cái, chữ số và ký tự đặc biệt; không được trùng tên đăng nhập hoặc mật khẩu của tài khoản khác.</small>
                             </div>
                             <div class="form-group">
                                 <label class="font-weight-bold" for="mat_khau_moi_confirmation">Nhập lại mật khẩu mới</label>

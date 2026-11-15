@@ -195,7 +195,6 @@ class KhamBenhController extends Controller
                     throw new Exception('Chuyển viện không được kê thuốc/vắc-xin tại phiếu này.');
                 }
 
-                $queueInProgress = DB::table('hang_doi_kham')->where('pet_id', $fields['pet_id'])->where('trangthai', 'DANG_KHAM')->exists();
                 DB::table('hang_doi_kham')->where('pet_id', $fields['pet_id'])->whereIn('trangthai', ['CHO_KHAM', 'DANG_KHAM'])->update(['trangthai' => 'DA_KHAM', 'updated_at' => now()]);
 
                 $recordId = DB::table('phieu_kham')->insertGetId([

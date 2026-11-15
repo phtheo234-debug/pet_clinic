@@ -71,6 +71,12 @@ class QuanLyLongController extends Controller
             }
 
             $actualCount = DB::table('thu_cung')->where('cage_id', $id)->count();
+            if ($actualCount > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Lồng đang có thú cưng lưu trú nên không thể chỉnh sửa. Vui lòng hoàn tất lưu trú trước.',
+                ], 409);
+            }
             if ((int) $fields['succhua'] < $actualCount) {
                 return response()->json([
                     'status' => 'error',

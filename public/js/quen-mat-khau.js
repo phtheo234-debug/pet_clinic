@@ -49,7 +49,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ email: document.getElementById("email").value.trim() })
             });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.message || "Không gửi được mã xác nhận.");
+            if (!response.ok) {
+                if (result.errors && typeof window.showFormValidationErrors === "function") window.showFormValidationErrors(result.errors);
+                throw new Error(result.message || Object.values(result.errors || {}).flat().join(" ") || "Không gửi được mã xác nhận.");
+            }
 
             show(result.message, true);
             startCountdown(60);
@@ -64,8 +67,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const password = document.getElementById("newPassword").value;
         const confirmation = document.getElementById("confirmPassword").value;
         const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s])\S{6,10}$/;
-        if (!passwordPattern.test(password)) return show("Mật khẩu phải dài 6–10 ký tự, không có khoảng trắng và gồm chữ, số, ký tự đặc biệt.");
-        if (password !== confirmation) return show("Mật khẩu nhập lại không khớp.");
+        if (!passwordPattern.test(password)) {
+            const message = "Mật khẩu phải dài 6–10 ký tự, không có khoảng trắng và gồm chữ, số, ký tự đặc biệt.";
+            show(message);
+            if (typeof window.setFormFieldError === "function") window.setFormFieldError(document.getElementById("newPassword"), message);
+            return;
+        }
+        if (password !== confirmation) {
+            const message = "Mật khẩu nhập lại không khớp.";
+            show(message);
+            if (typeof window.setFormFieldError === "function") window.setFormFieldError(document.getElementById("confirmPassword"), message);
+            return;
+        }
 
         try {
             const response = await fetch("/api/v1/auth/reset-password", {
@@ -79,7 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 })
             });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.message || "Không thể đặt lại mật khẩu.");
+            if (!response.ok) {
+                if (result.errors && typeof window.showFormValidationErrors === "function") window.showFormValidationErrors(result.errors);
+                throw new Error(result.message || Object.values(result.errors || {}).flat().join(" ") || "Không thể đặt lại mật khẩu.");
+            }
 
             if (countdownInterval) clearInterval(countdownInterval);
             countdown.classList.add("d-none");

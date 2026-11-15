@@ -154,10 +154,6 @@ class QuanLyTaiKhoanController extends Controller
 
         ]);
 
-        if ($this->passwordUsedByOtherAccount($fields['username'])) {
-            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.'], 422);
-        }
-
         $temporaryPassword = $this->generateTemporaryPassword();
 
         $user = NguoiDung::create([
@@ -203,9 +199,6 @@ class QuanLyTaiKhoanController extends Controller
             'phone' => ['nullable', 'string', 'max:20', Rule::unique('nguoi_dung', 'phone')->ignore($user->user_id, 'user_id')],
             'vaitro' => ['required', Rule::in(['BAC_SI', 'NHAN_VIEN'])],
         ]);
-        if ($this->passwordUsedByOtherAccount($fields['username'], (int) $user->user_id)) {
-            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.'], 422);
-        }
         $user->fill($fields);
         $user->save();
         return response()->json(['status' => 'success', 'message' => 'Cập nhật tài khoản thành công.', 'data' => [

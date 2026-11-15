@@ -11,20 +11,19 @@ use Illuminate\Validation\Rule;
 class QuanLyTaiKhoanController extends Controller
 {
     /**
-     * Kiểm tra một thông tin đăng nhập có bị tài khoản KHÁC sử dụng
-     * làm tên đăng nhập hoặc mật khẩu hay chưa.
+     * Chỉ kiểm tra mật khẩu có trùng mật khẩu của tài khoản khác hay không.
+     * Không so sánh mật khẩu với tên đăng nhập, email hoặc số điện thoại.
      */
-    private function conflictsWithOtherCredentials(string $value, ?int $ignoreUserId = null): bool
+    private function passwordUsedByOtherAccount(string $password, ?int $ignoreUserId = null): bool
     {
-        $accounts = NguoiDung::select('user_id', 'username', 'mat_khau')->get();
+        $accounts = NguoiDung::select('user_id', 'mat_khau')->get();
 
         foreach ($accounts as $account) {
             if ($ignoreUserId !== null && (int) $account->user_id === $ignoreUserId) {
                 continue;
             }
 
-            if (strcasecmp($value, (string) $account->username) === 0
-                || Hash::check($value, $account->mat_khau)) {
+            if (Hash::check($password, $account->mat_khau)) {
                 return true;
             }
         }
@@ -56,7 +55,7 @@ class QuanLyTaiKhoanController extends Controller
                 [$characters[$i], $characters[$j]] = [$characters[$j], $characters[$i]];
             }
             $password = implode('', $characters);
-        } while ($this->conflictsWithOtherCredentials($password, $ignoreUserId));
+        } while ($this->passwordUsedByOtherAccount($password, $ignoreUserId));
 
         return $password;
     }
@@ -141,7 +140,8 @@ class QuanLyTaiKhoanController extends Controller
             'phone' => [
                 'nullable',
                 'string',
-                'max:20'
+                'max:20',
+                'unique:nguoi_dung,phone'
             ],
 
             'vaitro' => [
@@ -154,8 +154,8 @@ class QuanLyTaiKhoanController extends Controller
 
         ]);
 
-        if ($this->conflictsWithOtherCredentials($fields['username'])) {
-            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập này đang được dùng làm mật khẩu của tài khoản khác. Vui lòng chọn tên khác.'], 422);
+        if ($this->passwordUsedByOtherAccount($fields['username'])) {
+            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.'], 422);
         }
 
         $temporaryPassword = $this->generateTemporaryPassword();
@@ -200,11 +200,11 @@ class QuanLyTaiKhoanController extends Controller
             'username' => ['required', 'string', 'max:50', Rule::unique('nguoi_dung', 'username')->ignore($user->user_id, 'user_id')],
             'ho_ten' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:100', Rule::unique('nguoi_dung', 'email')->ignore($user->user_id, 'user_id')],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'max:20', Rule::unique('nguoi_dung', 'phone')->ignore($user->user_id, 'user_id')],
             'vaitro' => ['required', Rule::in(['BAC_SI', 'NHAN_VIEN'])],
         ]);
-        if ($this->conflictsWithOtherCredentials($fields['username'], (int) $user->user_id)) {
-            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập này đang được dùng làm mật khẩu của tài khoản khác. Vui lòng chọn tên khác.'], 422);
+        if ($this->passwordUsedByOtherAccount($fields['username'], (int) $user->user_id)) {
+            return response()->json(['status' => 'error', 'message' => 'Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.'], 422);
         }
         $user->fill($fields);
         $user->save();

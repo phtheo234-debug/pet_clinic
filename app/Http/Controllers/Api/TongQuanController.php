@@ -81,7 +81,7 @@ class TongQuanController extends Controller
             ->whereIn('i.danhmuc', ['THUOC', 'VAC_XIN', 'THUC_AN', 'DO_DUNG'])
             ->select('i.item_id', 'i.masanpham', 'i.ten_sanpham', 'i.danhmuc',
                 DB::raw("CASE WHEN i.danhmuc = 'DO_DUNG' THEN COALESCE(i.soluongton, 0) ELSE COALESCE(stock.tong_ton, 0) END as so_luong"))
-            ->having('so_luong', '<', 5)
+            ->having('so_luong', '<=', 5)
             ->orderBy('i.danhmuc')->orderBy('i.ten_sanpham')->get();
 
         $khoSapHet = [

@@ -34,6 +34,17 @@ class XacThucController extends Controller
             ], 403);
         }
 
+        // Tài khoản cũ có mật khẩu không đạt quy tắc mới phải đổi ngay sau đăng nhập.
+        $passwordCompliant = preg_match(
+            '/^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/',
+            $fields['mat_khau']
+        ) === 1 && strcasecmp($fields['mat_khau'], $user->username) !== 0;
+
+        if (!$passwordCompliant && !$user->phai_doimatkhau) {
+            $user->phai_doimatkhau = true;
+            $user->save();
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

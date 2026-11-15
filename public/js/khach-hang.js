@@ -2,6 +2,7 @@ const pubApi = '/api/v1/public';
 let ownerFound = null;
 let spaCatalog = [];
 let lookupBookings = [];
+let lookupPage = 1;
 const $id = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -156,7 +157,13 @@ async function submitBooking(event) {
 
 function renderLookupResults() {
     const el = $id('lookupResults');
-    el.innerHTML = lookupBookings.map(booking =>
+    const pageSize = 5;
+    const totalPages = Math.ceil(lookupBookings.length / pageSize);
+    lookupPage = Math.min(Math.max(lookupPage, 1), Math.max(totalPages, 1));
+    const start = (lookupPage - 1) * pageSize;
+    const visibleBookings = lookupBookings.slice(start, start + pageSize);
+
+    const rows = visibleBookings.map(booking =>
         '<div class="lookup-result-item"><div><strong>' + esc(booking.ma_lich_hen) +
         '</strong> · ' + esc(booking.ten_thucung) + '<br><small class="text-muted">' +
         esc(booking.ngay_hen) + ' · ' + (booking.ca_hen === 'SANG' ? 'Ca sáng' : 'Ca chiều') +
@@ -164,6 +171,30 @@ function renderLookupResults() {
         ' · ' + esc(booking.trang_thai) + '</small></div><button type="button" class="btn btn-sm btn-outline-primary" data-select-booking="' +
         Number(booking.id) + '">Xem thông tin</button></div>'
     ).join('');
+
+    let pagination = '';
+    if (totalPages > 1) {
+        const pages = totalPages <= 7
+            ? Array.from({length: totalPages}, (_, index) => index + 1)
+            : [...new Set([1, lookupPage - 1, lookupPage, lookupPage + 1, totalPages])]
+                .filter(page => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+        let pageButtons = '';
+        pages.forEach((page, index) => {
+            if (index && page - pages[index - 1] > 1) pageButtons += '<span class="mx-1 text-muted">...</span>';
+            pageButtons += '<button type="button" class="btn btn-sm ' +
+                (page === lookupPage ? 'btn-primary' : 'btn-outline-primary') +
+                ' mx-1" data-lookup-page="' + page + '">' + page + '</button>';
+        });
+        pagination = '<div class="d-flex flex-wrap align-items-center justify-content-end mt-3">' +
+            '<small class="text-muted mr-2">Trang ' + lookupPage + '/' + totalPages +
+            ' · ' + lookupBookings.length + ' lịch hẹn</small>' +
+            '<button type="button" class="btn btn-sm btn-outline-primary mx-1" data-lookup-page="' +
+            (lookupPage - 1) + '"' + (lookupPage === 1 ? ' disabled' : '') + '>‹</button>' +
+            pageButtons +
+            '<button type="button" class="btn btn-sm btn-outline-primary mx-1" data-lookup-page="' +
+            (lookupPage + 1) + '"' + (lookupPage === totalPages ? ' disabled' : '') + '>›</button></div>';
+    }
+    el.innerHTML = rows + pagination;
 }
 
 function selectBooking(id) {
@@ -196,6 +227,7 @@ async function lookup(event) {
         const phone = $id('lookupPhone').value.trim();
         const response = await pubRequest('/bookings/lookup?phone=' + encodeURIComponent(phone));
         lookupBookings = response.data || [];
+        lookupPage = 1;
         renderLookupResults();
         showMsg('lookupMessage', 'Tìm thấy ' + lookupBookings.length + ' lịch hẹn. Chọn một lịch để xem thông tin.', true);
     } catch (error) {
@@ -219,6 +251,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     $id('bookingForm').addEventListener('submit', submitBooking);
     $id('lookupForm').addEventListener('submit', lookup);
     $id('lookupResults').addEventListener('click', event => {
+        const pageButton = event.target.closest('[data-lookup-page]');
+        if (pageButton && !pageButton.disabled) {
+            lookupPage = Number(pageButton.dataset.lookupPage);
+            renderLookupResults();
+            return;
+        }
         const button = event.target.closest('[data-select-booking]');
         if (button) selectBooking(button.dataset.selectBooking);
     });

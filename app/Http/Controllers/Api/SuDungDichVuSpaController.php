@@ -101,6 +101,33 @@ class SuDungDichVuSpaController extends Controller
                 'updated_at' => now(),
             ]);
 
+            $bookings = DB::table('lich_hen_khach')
+                ->where('pet_id', $pet->pet_id)
+                ->whereIn('loai_dich_vu', ['SPA', 'BOTH'])
+                ->where('trang_thai', 'DA_XAC_NHAN')
+                ->whereDate('ngay_hen', '<=', now()->toDateString())
+                ->get();
+
+            foreach ($bookings as $booking) {
+                $spaIds = json_decode($booking->dich_vu_spa ?? '[]', true) ?: [];
+                $doneIds = DB::table('luot_dich_vu_spa')
+                    ->where('pet_id', $pet->pet_id)
+                    ->whereIn('item_id', $spaIds)
+                    ->where('created_at', '>=', $booking->created_at)
+                    ->distinct()->pluck('item_id')->map(fn ($id) => (int) $id)->all();
+                $spaDone = count(array_unique(array_map('intval', $spaIds))) === count($doneIds);
+                $medicalDone = $booking->loai_dich_vu === 'SPA'
+                    || ($booking->queue_id && DB::table('hang_doi_kham')
+                        ->where('queue_id', $booking->queue_id)->where('trangthai', 'DA_KHAM')->exists());
+
+                if ($spaDone && $medicalDone) {
+                    DB::table('lich_hen_khach')->where('id', $booking->id)->update([
+                        'trang_thai' => 'DA_HOAN_THANH',
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Đã ghi nhận dịch vụ Spa. Phí sẽ được cộng vào hóa đơn khi thanh toán.',

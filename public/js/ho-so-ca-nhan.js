@@ -53,6 +53,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             alert("passwordAlert", result.message, true);
             e.target.reset();
-        } catch (error) { alert("passwordAlert", error.message); }
+        } catch (error) {
+            alert("passwordAlert", error.message);
+            if (typeof window.setFormFieldError === "function") {
+                const target = /hiện tại/i.test(error.message)
+                    ? document.getElementById("oldPassword")
+                    : document.getElementById("profileNewPassword");
+                window.setFormFieldError(target, error.message);
+            }
+        }
     });
 });

@@ -47,6 +47,7 @@
         </div>
     </div>
     <script src="{{ asset('js/cau-hinh.js') }}"></script>
+    <script src="{{ asset('js/form-guidance.js') }}?v=1"></script>
     <script src="{{ asset('js/xac-thuc.js') }}"></script>
 </body>
 </html>

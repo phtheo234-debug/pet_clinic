@@ -155,4 +155,17 @@
         }));
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
+
+    const attributeObserver = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            const field = mutation.target;
+            const note = (field.closest(".input-group") || field).nextElementSibling;
+            if (note?.matches("[data-field-guidance]")) note.textContent = guidanceText(field);
+        });
+    });
+    attributeObserver.observe(document.documentElement, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ["min", "max", "required", "pattern", "minlength", "maxlength", "step"]
+    });
 })();

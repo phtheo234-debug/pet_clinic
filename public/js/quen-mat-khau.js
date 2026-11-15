@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const password = document.getElementById("newPassword").value;
         const confirmation = document.getElementById("confirmPassword").value;
-        const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/;
+        const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s])\S{6,10}$/;
         if (!passwordPattern.test(password)) return show("Mật khẩu phải dài 6–10 ký tự, không có khoảng trắng và gồm chữ, số, ký tự đặc biệt.");
         if (password !== confirmation) return show("Mật khẩu nhập lại không khớp.");
 

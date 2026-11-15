@@ -27,7 +27,6 @@ return new class extends Migration
             $table->text('trieuchung')->nullable();
             $table->text('chandoan');
             $table->decimal('cannangkhi_kham', 5, 2);
-            $table->enum('trangthai', ['CHUA_KHAM', 'DANG_DIEU_TRI', 'HOAN_THANH', 'CHUYEN_VIEN'])->default('CHUA_KHAM');
             $table->string('huong_xuly', 20)->nullable();
             $table->boolean('yeu_cau_cach_ly')->default(false);
             $table->foreignId('invoice_id')->nullable()->constrained('hoa_don', 'invoice_id')->nullOnDelete();

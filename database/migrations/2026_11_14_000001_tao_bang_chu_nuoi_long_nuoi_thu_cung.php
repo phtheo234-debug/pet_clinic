@@ -37,25 +37,17 @@ return new class extends Migration
             $table->string('ten_thucung', 50);
             $table->string('loai', 30);
             $table->string('giong', 50)->nullable();
+            $table->decimal('cannang', 5, 2)->nullable();
             $table->enum('gioitinh', ['DUC', 'CAI', 'CHUA_XAC_DINH'])->default('CHUA_XAC_DINH');
             $table->date('ngaysinh')->nullable();
             $table->enum('trangthai', ['NOI_TRU', 'NGOAI_TRU', 'DA_XUAT_VIEN', 'CHUYEN_VIEN'])->default('NGOAI_TRU');
             $table->timestamp('ngaytao')->useCurrent();
         });
 
-        Schema::create('lich_su_can_nang', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('pet_id')->constrained('thu_cung', 'pet_id')->cascadeOnDelete();
-            $table->decimal('cannang', 5, 2);
-            $table->timestamp('ngaydo')->useCurrent();
-            $table->foreignId('nguoido')->constrained('nguoi_dung', 'user_id');
-            $table->string('ghichu', 255)->nullable();
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('lich_su_can_nang');
         Schema::dropIfExists('thu_cung');
         Schema::dropIfExists('long_nuoi');
         Schema::dropIfExists('chu_nuoi');

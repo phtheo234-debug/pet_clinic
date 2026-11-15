@@ -58,6 +58,24 @@ class PhauThuatController extends Controller
         return response()->json(['status' => 'success', 'data' => DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->first()]);
     }
 
+    public function toggleStatus(int $id)
+    {
+        $surgery = DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->first();
+        abort_if(!$surgery, 404, 'Không tìm thấy loại phẫu thuật.');
+
+        $newStatus = !(bool) $surgery->trangthai;
+        DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->update([
+            'trangthai' => $newStatus,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $newStatus ? 'Đã bật sử dụng loại phẫu thuật.' : 'Đã tạm ngưng loại phẫu thuật.',
+            'data' => DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->first(),
+        ]);
+    }
+
     public function destroy(int $id)
     {
         $used = DB::table('phieu_kham')->where('surgery_id', $id)->exists();

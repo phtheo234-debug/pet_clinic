@@ -97,7 +97,7 @@ class KhachHangController extends Controller
                 'ma_lich_hen'=>$code,'owner_id'=>$ownerId,'pet_id'=>$petId,'loai_dich_vu'=>$type,
                 'ngay_hen'=>$data['appointment_date'],'ca_hen'=>$data['shift'],'gio_mong_muon'=>$time,
                 'ghi_chu_kham'=>$data['medical_note']??null,'dich_vu_spa'=>json_encode($spaIds),
-                'trang_thai'=>'CHO_XAC_NHAN','created_at'=>now(),'updated_at'=>now()
+                'trang_thai'=>'DA_XAC_NHAN','created_at'=>now(),'updated_at'=>now()
             ]);
 
             $queueId = null;
@@ -116,7 +116,7 @@ class KhachHangController extends Controller
                 DB::table('lich_hen_khach')->where('id',$id)->update(['queue_id'=>$queueId]);
             }
 
-            return response()->json(['status'=>'success','message'=>'Đã tiếp nhận yêu cầu đặt lịch. Vui lòng lưu mã lịch hẹn để tra cứu hoặc chỉnh sửa.','data'=>[
+            return response()->json(['status'=>'success','message'=>'Đặt lịch thành công. Lịch hẹn đã được xác nhận tự động.','data'=>[
                 'ma_lich_hen'=>$code,'owner_name'=>DB::table('chu_nuoi')->where('owner_id',$ownerId)->value('ho_ten'),
                 'pet_name'=>DB::table('thu_cung')->where('pet_id',$petId)->value('ten_thucung'),'queue_id'=>$queueId
             ]],201);

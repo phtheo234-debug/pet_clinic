@@ -603,7 +603,7 @@ class ThanhToanController extends Controller
                             ]);
                         }
                     }
-                    DB::table('phieu_kham')->whereIn('record_id', $unbilledRecords->pluck('record_id'))->update(['invoice_id' => $invoiceId, 'trangthai' => 'HOAN_THANH']);
+                    DB::table('phieu_kham')->whereIn('record_id', $unbilledRecords->pluck('record_id'))->update(['invoice_id' => $invoiceId]);
                 }
                 // 6. Lưu chi tiết phí lưu trú
                 if ($totalBoarding > 0) {
@@ -834,9 +834,8 @@ class ThanhToanController extends Controller
                     ->select('mr.*', 's.ma_phauthuat', 's.ten_phauthuat')
                     ->lockForUpdate()->get();
                 // Thanh toán thành công là mốc chốt ca khám/xuất viện.
-                // Các phiếu đang điều trị được chốt HOAN_THANH trong cùng transaction;
-                // phiếu chuyển viện không được tự chuyển thành hoàn thành tại phòng khám này.
-                $records = $records->reject(fn($r) => $r->trangthai === 'CHUYEN_VIEN')->values();
+                // Phieu chuyen vien khong duoc dua vao hoa don dieu tri tai phong kham nay.
+                $records = $records->reject(fn($r) => $r->huong_xuly === 'TRANSFER')->values();
 
                 $don_thuoc = DB::table('don_thuoc as rx')
                     ->join('phieu_kham as mr', 'mr.record_id', '=', 'rx.record_id')

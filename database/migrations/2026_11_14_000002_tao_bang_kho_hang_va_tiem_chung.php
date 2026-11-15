@@ -18,18 +18,6 @@ return new class extends Migration
             $table->unsignedInteger('soluongton')->default(0);
         });
 
-        Schema::create('lo_hang', function (Blueprint $table) {
-            $table->id('batch_id');
-            $table->foreignId('item_id')->constrained('kho_hang', 'item_id')->cascadeOnDelete();
-            $table->string('solo', 50);
-            $table->unsignedInteger('soluong')->default(0);
-            $table->date('ngaynhap');
-            $table->date('ngaysanxuat')->nullable();
-            $table->date('ngayhethan')->nullable();
-            $table->enum('trangthai', ['DANG_SU_DUNG', 'HET_HAN', 'DA_TIEU_HUY'])->default('DANG_SU_DUNG');
-            $table->unique(['item_id', 'solo'], 'lo_hang_mat_hang_ma_lo_unique');
-        });
-
         Schema::create('danh_muc_phau_thuat', function (Blueprint $table) {
             $table->id('surgery_id');
             $table->string('ma_phauthuat', 30)->unique();
@@ -67,7 +55,6 @@ return new class extends Migration
         Schema::dropIfExists('lich_su_tiem_chung');
         Schema::dropIfExists('loai_vac_xin');
         Schema::dropIfExists('danh_muc_phau_thuat');
-        Schema::dropIfExists('lo_hang');
         Schema::dropIfExists('kho_hang');
     }
 };

@@ -83,10 +83,7 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
     Route::post('/pets', [ThuCungController::class, 'store'])->middleware('role:QUAN_TRI,NHAN_VIEN');
     Route::put('/pets/{pet}', [ThuCungController::class, 'update'])->middleware('role:QUAN_TRI,BAC_SI,NHAN_VIEN');
     Route::patch('/pets/{pet}', [ThuCungController::class, 'update'])->middleware('role:QUAN_TRI,BAC_SI,NHAN_VIEN');
-    Route::delete('/pets/{pet}', [ThuCungController::class, 'destroy'])->middleware('role:QUAN_TRI');
     Route::get('/owners', [ThuCungController::class, 'owners']);
-    Route::put('/owners/{id}', [ThuCungController::class, 'updateOwner'])->middleware('role:QUAN_TRI,NHAN_VIEN');
-    Route::delete('/owners/{id}', [ThuCungController::class, 'destroyOwner'])->middleware('role:QUAN_TRI');
 
     // Lịch tiêm chủng: xem lịch và lịch sử; ghi nhận tiêm được thực hiện cùng phiếu khám.
     Route::get('/vaccinations/types', [TiemChungController::class, 'types']);
@@ -98,12 +95,6 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
     Route::get('/boarding/requests', [LuuTruController::class, 'requests']);
     Route::post('/boarding/requests/{id}/confirm', [LuuTruController::class, 'confirmRequest'])
         ->middleware('role:QUAN_TRI,NHAN_VIEN');
-
-    // Quản lý lịch hẹn trực tuyến của khách hàng.
-    Route::middleware('role:QUAN_TRI,NHAN_VIEN')->group(function () {
-        Route::get('/appointments', [KhachHangController::class, 'danhSachLichHen']);
-        Route::patch('/appointments/{id}/status', [KhachHangController::class, 'capNhatTrangThai']);
-    });
 
     // Ghi nhận Spa và thanh toán thuộc nghiệp vụ nhân viên/quản trị.
     Route::get('/spa/usages', [SuDungDichVuSpaController::class, 'index'])->middleware('role:QUAN_TRI,NHAN_VIEN');

@@ -152,6 +152,7 @@ class KhachHangController extends Controller
         if (!$booking) return response()->json(['message'=>'Không tìm thấy lịch hẹn.'],404);
         if ($booking->trang_thai!=='CHO_XAC_NHAN') return response()->json(['message'=>'Lịch hẹn đã được xử lý, không thể chỉnh sửa trực tuyến.'],409);
         $spaIds=in_array($booking->loai_dich_vu,['SPA','BOTH'],true)?($data['spa_services']??json_decode($booking->dich_vu_spa,true)?:[]):[];
+        if (in_array($booking->loai_dich_vu,['SPA','BOTH'],true) && !$spaIds) return response()->json(['message'=>'Vui lòng chọn ít nhất một dịch vụ Spa.'],422);
         if ($spaIds && DB::table('kho_hang')->where('danhmuc','DICH_VU_SPA')->whereIn('item_id',$spaIds)->count()!==count($spaIds))
             return response()->json(['message'=>'Danh sách dịch vụ Spa không hợp lệ.'],422);
         DB::table('lich_hen_khach')->where('id',$booking->id)->update([

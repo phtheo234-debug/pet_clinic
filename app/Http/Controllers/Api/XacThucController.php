@@ -76,8 +76,15 @@ class XacThucController extends Controller
         $fields = $request->validate([
             'email' => 'required|email',
             'code' => 'required|string|size:6',
-            'mat_khau_moi' => 'required|string|min:6|confirmed',
+            'mat_khau_moi' => ['required', 'string', 'min:6', 'max:10', 'regex:/^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/', 'confirmed'],
         ]);
+
+        if (strcasecmp($fields['mat_khau_moi'], $user->username) === 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Mật khẩu không được trùng với tên đăng nhập.',
+            ], 422);
+        }
 
         $key = 'password_reset:' . strtolower($fields['email']);
         $hashedCode = Cache::get($key);
@@ -137,10 +144,17 @@ class XacThucController extends Controller
     {
         $fields = $request->validate([
             'mat_khau_cu' => 'required|string',
-            'mat_khau_moi' => 'required|string|min:6|different:mat_khau_cu|confirmed',
+            'mat_khau_moi' => ['required', 'string', 'min:6', 'max:10', 'regex:/^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[^A-Za-z0-9\\s])\\S{6,10}$/', 'different:mat_khau_cu', 'confirmed'],
         ]);
 
         $user = $request->user();
+
+        if (strcasecmp($fields['mat_khau_moi'], $user->username) === 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Mật khẩu không được trùng với tên đăng nhập.',
+            ], 422);
+        }
 
         if (!Hash::check($fields['mat_khau_cu'], $user->mat_khau)) {
             return response()->json([

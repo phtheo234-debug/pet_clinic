@@ -194,8 +194,9 @@ function renderPetsTable(items) {
             : status === "DANG_KHAM" ? "badge-warning"
             : status === "CHO_KHAM" ? "badge-info" : "badge-secondary";
         const notes = [
-            pet.ghi_chu_dat_lich ? "Đặt lịch: " + pet.ghi_chu_dat_lich : "",
-            pet.ghi_chu_tiep_nhan ? "Tiếp nhận: " + pet.ghi_chu_tiep_nhan : ""
+            pet.ngay_hen_kham ? "Lịch hẹn: " + pet.ngay_hen_kham + (pet.gio_hen_kham ? " · " + String(pet.gio_hen_kham).slice(0, 5) : "") : "",
+            pet.ghi_chu_dat_lich ? "Ghi chú đặt lịch: " + pet.ghi_chu_dat_lich : "",
+            pet.ghi_chu_tiep_nhan ? "Ghi chú tiếp nhận: " + pet.ghi_chu_tiep_nhan : ""
         ].filter(Boolean).map(note => `<small class="d-block text-muted mt-1">${escapePetHtml(note)}</small>`).join("");
         const ownerName = pet.owner?.name || "-";
         const ownerPhone = pet.owner?.phone || "-";

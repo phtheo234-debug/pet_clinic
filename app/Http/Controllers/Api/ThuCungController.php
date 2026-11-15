@@ -41,7 +41,7 @@ class ThuCungController extends Controller
                 'chu_nuoi.diachi as owner_address',
                 'chu_nuoi.email as owner_email',
                 'thu_cung.cannang as current_weight',
-                'latest_exam.record_id as record_id', 'latest_exam.exam_status as trangthai_kham',
+                'latest_exam.record_id as record_id', 
                 'latest_exam.exam_date as ngaykham_gannhat', 'latest_exam.exam_invoice_id as mahoadon_kham',
                 'latest_queue.queue_status as queue_status', 'latest_queue.queue_note as queue_note',
                 'latest_queue.intake_note as intake_note', 'latest_queue.queue_created_at as queue_created_at',

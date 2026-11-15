@@ -1,6 +1,7 @@
 (function () {
     const excludedTypes = new Set(["hidden", "checkbox", "radio", "button", "submit", "reset", "image", "file"]);
     const selectors = "input, textarea";
+    let feedbackSequence = 0;
 
     function fieldContainer(field) {
         return field.closest(".form-group, .form-field, .mb-3, .col, [class*='col-']") || field.parentElement;
@@ -37,18 +38,16 @@
     }
 
     function getFeedback(field) {
-        const container = fieldContainer(field);
-        if (!container) return null;
-        let feedback = container.querySelector('[data-field-feedback="' + field.id + '"]');
-        if (!feedback) {
-            feedback = document.createElement("div");
-            feedback.className = "invalid-feedback d-block";
-            feedback.dataset.fieldFeedback = field.id || ("field-" + Math.random().toString(36).slice(2));
-            feedback.hidden = true;
-            const group = field.closest(".input-group");
-            const anchor = group || field;
-            anchor.insertAdjacentElement("afterend", feedback);
+        if (field.dataset.guidanceFeedbackId) {
+            return document.getElementById(field.dataset.guidanceFeedbackId);
         }
+        const feedback = document.createElement("div");
+        feedback.className = "invalid-feedback d-block";
+        feedback.id = "field-feedback-" + (++feedbackSequence);
+        feedback.hidden = true;
+        field.dataset.guidanceFeedbackId = feedback.id;
+        const group = field.closest(".input-group");
+        (group || field).insertAdjacentElement("afterend", feedback);
         return feedback;
     }
 
@@ -75,14 +74,15 @@
         (root || document).querySelectorAll(selectors).forEach(field => {
             if (field.dataset.guidanceReady === "1" || excludedTypes.has((field.type || "").toLowerCase()) || field.readOnly || field.disabled) return;
             field.dataset.guidanceReady = "1";
-            const container = fieldContainer(field);
-            if (container && !container.querySelector(".form-text, .help-block, [data-field-guidance]")) {
+            const group = field.closest(".input-group");
+            const anchor = group || field;
+            const next = anchor.nextElementSibling;
+            if (!next || !next.matches(".form-text, .help-block, [data-field-guidance]")) {
                 const note = document.createElement("small");
                 note.className = "form-text text-muted";
                 note.dataset.fieldGuidance = "1";
                 note.textContent = guidanceText(field);
-                const group = field.closest(".input-group");
-                (group || field).insertAdjacentElement("afterend", note);
+                anchor.insertAdjacentElement("afterend", note);
             }
             field.addEventListener("input", () => {
                 if (field.validity.valid) clearError(field);

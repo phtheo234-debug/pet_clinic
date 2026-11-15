@@ -48,7 +48,7 @@ Ten file va class do du an tao duoc doi sang tieng Viet khong dau. Ten bat buoc 
 - Khach hang tim ho so bang so dien thoai, chon thu cung cu hoac tao ho so thu cung moi.
 - Ho tro dat lich kham, Spa hoac ca hai; chon ngay, ca sang/chieu va gio mong muon.
 - Lich hen duoc tu dong xac nhan (`DA_XAC_NHAN`) ngay khi dat thanh cong; khong can le tan duyet.
-- Neu chon dich vu kham (`MEDICAL`/`BOTH`), he thong tao/gan hang doi `CHO_KHAM`; khi phieu kham hoan tat, lich hen loai `MEDICAL` chuyen `DA_HOAN_THANH`.
+- Neu chon dich vu kham (`MEDICAL`/`BOTH`), he thong tao/gan hang doi `CHO_KHAM`; khi tat ca dich vu da chon (kham va/hoac Spa) duoc ghi nhan hoan tat, lich hen chuyen `DA_HOAN_THANH`.
 - Trang thai lich hen: `DA_XAC_NHAN`, `DA_HOAN_THANH`, `DA_HUY`.
 - Tra cuu lich hen bang so dien thoai; khach hang co the xem thong tin va huy lich dang `DA_XAC_NHAN` neu luot kham chua bat dau.
 - Ngay hen va ngay doi lich phai tu ngay hom sau tro di; backend tu kiem tra, khong chi gioi han tren giao dien.

@@ -178,7 +178,12 @@ class KhachHangController extends Controller
             ->orderByRaw("CASE WHEN b.trang_thai='CHO_XAC_NHAN' THEN 0 WHEN b.trang_thai='DA_XAC_NHAN' THEN 1 ELSE 2 END")
             ->orderBy('b.ngay_hen')->orderBy('b.gio_mong_muon')
             ->limit(300)->get();
-        foreach ($rows as $row) $row->spa_services = json_decode($row->dich_vu_spa,true) ?: [];
+        foreach ($rows as $row) {
+            $row->spa_services = json_decode($row->dich_vu_spa,true) ?: [];
+            $row->spa_service_names = $row->spa_services
+                ? DB::table('kho_hang')->whereIn('item_id',$row->spa_services)->pluck('ten_sanpham')->all()
+                : [];
+        }
         return response()->json(['status'=>'success','data'=>$rows]);
     }
 

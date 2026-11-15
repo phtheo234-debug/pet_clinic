@@ -38,6 +38,9 @@
                             </button>
                         </form>
                         <div class="text-center mt-3"><a href="{{ route('forgot-password') }}">Quên mật khẩu?</a></div>
+                        <a href="{{ route('home') }}" class="btn btn-outline-secondary btn-block mt-3">
+                            <i class="fas fa-home mr-1"></i> Quay về trang chủ
+                        </a>
                     </div>
                 </div>
             </div>

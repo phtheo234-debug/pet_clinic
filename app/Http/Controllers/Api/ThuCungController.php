@@ -11,12 +11,7 @@ class ThuCungController extends Controller
 {
     private function query()
     {
-        // Subquery lấy chỉ số cân nặng mới nhất từ lich_su_can_nang (BR-04)
-        $latestWeight = DB::table('lich_su_can_nang as wl1')
-            ->select('wl1.pet_id', 'wl1.cannang')
-            ->whereRaw('wl1.id = (SELECT MAX(wl2.id) FROM lich_su_can_nang wl2 WHERE wl2.pet_id = wl1.pet_id)');
-
-        $latestExam = DB::table('phieu_kham as mr1')->select('mr1.pet_id', 'mr1.record_id', 'mr1.trangthai as exam_status', 'mr1.ngaykham as exam_date', 'mr1.invoice_id as exam_invoice_id')->whereRaw('mr1.record_id = (SELECT MAX(mr2.record_id) FROM phieu_kham mr2 WHERE mr2.pet_id = mr1.pet_id)');
+        $latestExam = DB::table('phieu_kham as mr1')->select('mr1.pet_id', 'mr1.record_id', 'mr1.ngaykham as exam_date', 'mr1.invoice_id as exam_invoice_id')->whereRaw('mr1.record_id = (SELECT MAX(mr2.record_id) FROM phieu_kham mr2 WHERE mr2.pet_id = mr1.pet_id)');
 
         $latestQueue = DB::table('hang_doi_kham as mq1')
             ->select('mq1.pet_id', 'mq1.trangthai as queue_status', 'mq1.ghi_chu as queue_note',
@@ -39,16 +34,13 @@ class ThuCungController extends Controller
             ->leftJoinSub($latestQueue, 'latest_queue', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_queue.pet_id'); })
             ->leftJoinSub($latestBooking, 'latest_booking', function ($join) { $join->on('thu_cung.pet_id', '=', 'latest_booking.pet_id'); })
             ->leftJoin('chu_nuoi', 'chu_nuoi.owner_id', '=', 'thu_cung.owner_id')
-            ->leftJoinSub($latestWeight, 'latest_weight', function ($join) {
-                $join->on('thu_cung.pet_id', '=', 'latest_weight.pet_id');
-            })
             ->select(
                 'thu_cung.*',
                 'chu_nuoi.ho_ten as owner_name',
                 'chu_nuoi.phone as owner_phone',
                 'chu_nuoi.diachi as owner_address',
                 'chu_nuoi.email as owner_email',
-                'latest_weight.cannang as current_weight',
+                'thu_cung.cannang as current_weight',
                 'latest_exam.record_id as record_id', 'latest_exam.exam_status as trangthai_kham',
                 'latest_exam.exam_date as ngaykham_gannhat', 'latest_exam.exam_invoice_id as mahoadon_kham',
                 'latest_queue.queue_status as queue_status', 'latest_queue.queue_note as queue_note',
@@ -236,20 +228,12 @@ class ThuCungController extends Controller
                     'giong'       => $v['breed'] ?? null,
                     'gioitinh'    => $v['gender'] ?? 'CHUA_XAC_DINH',
                     'ngaysinh'    => $v['dob'] ?? null,
+                    'cannang'     => $v['weight'],
                     'trangthai'   => 'NGOAI_TRU',
                 ]);
 
                 // 3. Tạo mã định danh duy nhất TC0001 (BR-01)
                 DB::table('thu_cung')->where('pet_id', $id)->update(['mathucung' => sprintf('TC%04d', $id)]);
-
-                // 4. Ghi nhận cân nặng khởi tạo vào lịch sử cân nặng.
-                DB::table('lich_su_can_nang')->insert([
-                    'pet_id'  => $id,
-                    'cannang' => $v['weight'],
-                    'ngaydo'  => now(),
-                    'nguoido' => $request->user()->user_id ?? 1,
-                    'ghichu'  => 'Cân nặng khởi tạo hồ sơ',
-                ]);
 
                 // Chỉ tạo lượt khám khi nhân viên tích "Khám bệnh" lúc tiếp nhận.
                 if ($request->boolean('kham_benh')) {
@@ -287,7 +271,7 @@ class ThuCungController extends Controller
             ->leftJoin('danh_muc_phau_thuat as s', 's.surgery_id', '=', 'mr.surgery_id')
             ->leftJoin('hoa_don as i', 'i.invoice_id', '=', 'mr.invoice_id')
             ->where('mr.pet_id', $id)
-            ->select('mr.record_id', 'mr.ngaykham', 'mr.chandoan', 'mr.huong_xuly', 'mr.trangthai', 'mr.invoice_id', 'i.mahoadon', 's.ten_phauthuat')
+            ->select('mr.record_id', 'mr.ngaykham', 'mr.chandoan', 'mr.huong_xuly', 'mr.invoice_id', 'i.mahoadon', 's.ten_phauthuat')
             ->orderByDesc('mr.ngaykham')->orderByDesc('mr.record_id')->get();
         $latestExam = $medicalHistory->first();
 
@@ -300,10 +284,7 @@ class ThuCungController extends Controller
         ], 200);
     }
 
-    /**
-     * Chỉ ghi nhận cân nặng mới; không cho sửa thông tin hồ sơ chủ nuôi/thú cưng.
-     * Mỗi lần cân đo tạo thêm một dòng lịch sử, không ghi đè dữ liệu cũ.
-     */
+    /** Cap nhat can nang hien tai; cac thong tin ho so khac khong duoc sua. */
     public function update(Request $request, $id)
     {
         $this->findOrFail($id);
@@ -319,17 +300,11 @@ class ThuCungController extends Controller
             'weight' => 'required|numeric|min:0.1|max:999',
         ]);
 
-        DB::table('lich_su_can_nang')->insert([
-            'pet_id' => $id,
-            'cannang' => $v['weight'],
-            'ngaydo' => now(),
-            'nguoido' => $request->user()->user_id ?? 1,
-            'ghichu' => 'Cập nhật cân nặng mới',
-        ]);
+        DB::table('thu_cung')->where('pet_id', $id)->update(['cannang' => $v['weight']]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Đã ghi nhận cân nặng mới vào lịch sử.',
+            'message' => 'Đã cập nhật cân nặng hiện tại.',
             'data' => $this->format($this->findOrFail($id)),
         ], 200);
     }

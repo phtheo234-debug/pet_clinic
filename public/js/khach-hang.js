@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $id('shift').addEventListener('change', () => setShiftTime($id('shift'), $id('preferredTime')));
     $id('bookingForm').addEventListener('submit', submitBooking);
     $id('lookupForm').addEventListener('submit', lookup);
-    $id('lookupResults').addEventListener('click', event => {
+    $id('lookupResults').addEventListener('click', async event => {
         const pageButton = event.target.closest('[data-lookup-page]');
         if (pageButton && !pageButton.disabled) {
             lookupPage = Number(pageButton.dataset.lookupPage);

@@ -1,26 +1,187 @@
-# Pet Clinic
+# 🐾 PET CLINIC – Hệ thống quản lý phòng khám thú cưng
 
-He thong quan ly phong kham thu cung, xay dung bang Laravel 12, PHP 8.2+, MySQL/MariaDB, Blade, Bootstrap 4 va JavaScript.
+PET CLINIC là ứng dụng web hỗ trợ quản lý hoạt động của phòng khám thú cưng, từ tiếp nhận hồ sơ, khám bệnh, kê đơn, quản lý kho, tiêm chủng, lưu trú, dịch vụ Spa đến thanh toán và thống kê. Hệ thống cũng cung cấp giao diện công khai để khách hàng tra cứu hồ sơ và đặt lịch dịch vụ.
 
-## Cai dat
+---
 
-1. Cai PHP 8.2+, Composer va MySQL/MariaDB.
-2. Tao database rong `pet_clinic`, charset `utf8mb4`.
-3. Chay `composer install`.
-4. Sao chep `.env.example` thanh `.env`, cap nhat thong tin ket noi MySQL.
-5. Chay `php artisan key:generate`.
-6. Chay `php artisan migrate`.
-7. Chay `php artisan serve` va mo `http://127.0.0.1:8000`.
+## 📌 Công nghệ sử dụng
 
-## Tao tai khoan quan tri dau tien
+| Thành phần | Công nghệ |
+|---|---|
+| Backend | PHP 8.2+, Laravel 12 |
+| Giao diện | Blade, HTML, CSS, Bootstrap, JavaScript |
+| Cơ sở dữ liệu | MySQL / MariaDB |
+| Xác thực API | Laravel Sanctum |
+| Quản lý phụ thuộc | Composer |
 
-Khong con tai khoan mau voi mat khau mac dinh. Sau khi migrate, chay `php artisan tinker` va tao tai khoan voi mat khau rieng:
+## ✨ Chức năng chính
+
+### 1. Khu vực khách hàng
+- Tra cứu chủ nuôi bằng số điện thoại.
+- Chọn thú cưng đã có hoặc tạo hồ sơ thú cưng mới khi đặt lịch.
+- Đặt lịch khám bệnh, dịch vụ Spa hoặc kết hợp cả hai.
+- Chọn ngày hẹn, ca sáng/chiều và giờ mong muốn.
+- Tra cứu lịch hẹn bằng số điện thoại.
+- Xem thông tin và hủy lịch đã xác nhận nếu lượt khám chưa bắt đầu.
+
+**Lưu ý:** Lịch hẹn được xác nhận tự động sau khi đặt thành công. Ngày hẹn phải từ ngày hôm sau trở đi.
+
+### 2. Quản lý hồ sơ chủ nuôi và thú cưng
+- Tiếp nhận và quản lý thông tin chủ nuôi, thú cưng.
+- Tìm kiếm hồ sơ theo số điện thoại.
+- Ghi nhận cân nặng hiện tại và lưu cân nặng tại thời điểm khám.
+- Tạo lượt chờ khám trong quá trình tiếp nhận khi khách có nhu cầu khám bệnh.
+- Theo dõi trạng thái khám thông qua hàng đợi khám.
+
+### 3. Quản lý khám bệnh
+- Theo dõi danh sách chờ khám.
+- Bác sĩ bắt đầu lượt khám và lập phiếu khám.
+- Ghi nhận thông tin khám, chẩn đoán và hướng xử lý.
+- Kê đơn thuốc và kiểm tra số lượng tồn kho.
+- Tra cứu lịch sử khám của thú cưng.
+- Theo dõi lịch tiêm chủng và lịch sử tiêm.
+
+### 4. Quản lý kho
+- Quản lý danh mục thuốc, vắc-xin, thức ăn, đồ dùng và dịch vụ Spa.
+- Theo dõi số lượng tồn kho.
+- Nhập, xuất và cập nhật thông tin mặt hàng theo quyền được cấp.
+- Kiểm tra số lượng tồn trước khi xuất dùng hoặc bán.
+- Cảnh báo mặt hàng có số lượng tồn không quá 5 đơn vị.
+
+**Cách quản lý tồn kho hiện tại:** Số lượng được lưu trực tiếp tại `kho_hang.soluongton`. Hệ thống chưa quản lý theo lô, số lô, ngày sản xuất, hạn sử dụng và không áp dụng FEFO.
+
+### 5. Quản lý lưu trú
+- Quản lý danh sách lồng nuôi.
+- Tiếp nhận yêu cầu lưu trú và xác nhận xếp lồng.
+- Theo dõi lượt lưu trú, tình trạng lồng và thông tin thú cưng đang ở.
+- Tính phí lưu trú 50.000 VND/ngày.
+- Không cho phép xóa lồng đang có thú cưng hoặc đã có lịch sử lưu trú.
+
+### 6. Quản lý dịch vụ Spa
+- Quản lý danh mục dịch vụ Spa.
+- Ghi nhận dịch vụ Spa đã thực hiện cho thú cưng.
+- Cho phép khách hàng chọn dịch vụ Spa khi đặt lịch.
+
+### 7. Thanh toán và hóa đơn
+- Tổng hợp chi phí khám, thuốc, Spa, lưu trú và các khoản liên quan.
+- Xem trước chi phí trước khi thanh toán.
+- Tạo hóa đơn thanh toán.
+- Hỗ trợ thanh toán dịch vụ và bán hàng tại quầy.
+
+### 8. Quản trị hệ thống
+- Quản lý tài khoản người dùng.
+- Phân quyền theo vai trò.
+- Khóa/mở trạng thái tài khoản và đặt lại mật khẩu.
+- Quản lý danh mục nghiệp vụ.
+- Xem thống kê tổng quan và báo cáo doanh thu.
+
+## 👥 Vai trò người dùng
+
+| Vai trò | Quyền nghiệp vụ chính |
+|---|---|
+| `QUAN_TRI` – Quản trị viên | Quản lý tài khoản, danh mục, kho, lồng nuôi; truy cập các nghiệp vụ khám, thanh toán và thống kê |
+| `BAC_SI` – Bác sĩ | Xem hồ sơ thú cưng, thực hiện khám bệnh, chẩn đoán, kê đơn và tra cứu lịch sử khám |
+| `NHAN_VIEN` – Nhân viên | Tiếp nhận thú cưng, quản lý lưu trú, ghi nhận Spa, xuất kho và xử lý thanh toán |
+
+Quyền truy cập được kiểm soát ở cả giao diện web và các API tương ứng.
+
+---
+
+## 🧰 Yêu cầu môi trường
+
+Trước khi cài đặt, cần chuẩn bị:
+
+- PHP **8.2 trở lên**.
+- Composer.
+- MySQL hoặc MariaDB.
+- Git (nếu clone dự án từ GitHub).
+- Các extension PHP cần thiết cho Laravel và kết nối MySQL đã được bật.
+
+## 🚀 Cài đặt và chạy dự án
+
+### Bước 1. Lấy mã nguồn
+
+Clone repository:
+
+```bash
+git clone https://github.com/phtheo234-debug/pet_clinic.git
+cd pet_clinic
+```
+
+Nếu cần sử dụng nhánh hoàn thiện nghiệp vụ:
+
+```bash
+git switch hoan-thien-nghiep-vu-pet-clinic
+git pull origin hoan-thien-nghiep-vet-clinic
+```
+
+### Bước 2. Cài đặt thư viện
+
+```bash
+composer install
+```
+
+### Bước 3. Tạo file cấu hình môi trường
+
+Sao chép `.env.example` thành `.env`:
+
+**Windows CMD:**
+```cmd
+copy .env.example .env
+```
+
+**PowerShell:**
+```powershell
+Copy-Item .env.example .env
+```
+
+Mở file `.env` và cấu hình kết nối MySQL. Ví dụ:
+
+```env
+APP_NAME="Pet Clinic"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pet_clinic
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Tạo database rỗng tên `pet_clinic` trong MySQL, sử dụng charset `utf8mb4`.
+
+### Bước 4. Tạo khóa ứng dụng
+
+```bash
+php artisan key:generate
+```
+
+### Bước 5. Khởi tạo cơ sở dữ liệu
+
+```bash
+php artisan migrate
+```
+
+Các migration tạo cấu trúc bảng. Dự án không tự động thêm tài khoản quản trị hoặc dữ liệu mẫu cho danh mục nghiệp vụ.
+
+### Bước 6. Tạo tài khoản quản trị đầu tiên
+
+Chạy Tinker:
+
+```bash
+php artisan tinker
+```
+
+Nhập đoạn lệnh sau và thay email, số điện thoại, mật khẩu bằng thông tin riêng:
 
 ```php
 \\App\\Models\\NguoiDung::create([
     'username' => 'admin',
     'mat_khau' => \\Illuminate\\Support\\Facades\\Hash::make('THAY_BANG_MAT_KHAU_RIENG'),
-    'ho_ten' => 'Quan tri vien',
+    'ho_ten' => 'Quản trị viên',
     'email' => 'admin@example.com',
     'phone' => 'THAY_BANG_SO_DIEN_THOAI_RIENG',
     'vaitro' => 'QUAN_TRI',
@@ -30,53 +191,99 @@ Khong con tai khoan mau voi mat khau mac dinh. Sau khi migrate, chay `php artisa
 ]);
 ```
 
-## Co so du lieu
+Thoát Tinker:
 
-Cac bang nghiep vu dung ten tieng Viet khong dau: `nguoi_dung`, `chu_nuoi`, `thu_cung`, `long_nuoi`, `luot_luu_tru`, `yeu_cau_luu_tru`, `phieu_kham`, `hang_doi_kham`, `lich_hen_khach`, `danh_muc_phau_thuat`, `kho_hang`, `don_thuoc`, `hoa_don`, `chi_tiet_hoa_don`, `luot_dich_vu_spa`, `loai_vac_xin`, `lich_su_tiem_chung`.
+```php
+exit
+```
 
-Can nang hien tai duoc luu tai `thu_cung.cannang`; khong tao bang lich su can nang. So luong ton cua thuoc, vac-xin, thuc an va do dung duoc luu truc tiep tai `kho_hang.soluongton`; khi ke don, su dung hoac ban hang, he thong kiem tra du ton va tru truc tiep so luong. Khong quan ly theo lo, khong luu so lo/ngay san xuat/han su dung va khong ap dung FEFO. Nguong canh bao ton kho co dinh `<= 5` don vi; dich vu Spa khong quan ly so luong ton. Khong su dung cac cot cau hinh lieu `lieu_mg_kg`, `mg_moi_don_vi`.
+Tài khoản được yêu cầu đổi mật khẩu theo cờ `phai_doimatkhau` khi đăng nhập lần đầu.
 
-Cac bang ha tang Laravel (`cache`, `jobs`, `sessions`, `personal_access_tokens`...) duoc giu lai de tuong thich cau hinh framework. Migration khong tu chen du lieu gia cho danh muc vac-xin, phau thuat, mat hang kho hoac tai khoan.
-
-Day la bo migration khoi tao cho database moi. Khong chay `migrate:fresh` tren database dang co du lieu can giu. Database cu can sao luu va chuyen du lieu rieng.
-
-Ten file va class do du an tao duoc doi sang tieng Viet khong dau. Ten bat buoc cua Laravel/Composer duoc giu nguyen. URL API duoc giu nguyen de khong lam dut cac request tu giao dien.
-
-## Website khach hang va dat lich
-
-- Trang chu cong khai: `/`; dang nhap nhan vien: `/login`.
-- Khach hang tim ho so bang so dien thoai, chon thu cung cu hoac tao ho so thu cung moi.
-- Ho tro dat lich kham, Spa hoac ca hai; chon ngay, ca sang/chieu va gio mong muon.
-- Lich hen duoc tu dong xac nhan (`DA_XAC_NHAN`) ngay khi dat thanh cong; khong can le tan duyet.
-- Neu chon dich vu kham (`MEDICAL`/`BOTH`), he thong tao/gan hang doi `CHO_KHAM`; khi tat ca dich vu da chon (kham va/hoac Spa) duoc ghi nhan hoan tat, lich hen chuyen `DA_HOAN_THANH`.
-- Trang thai lich hen: `DA_XAC_NHAN`, `DA_HOAN_THANH`, `DA_HUY`.
-- Tra cuu lich hen bang so dien thoai; khach hang co the xem thong tin va huy lich dang `DA_XAC_NHAN` neu luot kham chua bat dau.
-- Ngay hen phai tu ngay hom sau tro di; backend tu kiem tra, khong chi gioi han tren giao dien.
-- Yeu cau dat lich van duoc luu trong `lich_hen_khach`; khong con trang quan ly lich hen rieng trong khu vuc noi bo.
-- Danh muc Spa tren trang khach hang lay truc tiep tu cac mat hang co `danhmuc = DICH_VU_SPA` trong `kho_hang`.
-
-## Ho so chu nuoi va thu cung
-
-- Trang `/pets` hien thi danh sach ho so thu cung, tim kiem theo so dien thoai va goi y so dien thoai da co.
-- Form tiep nhan co tuy chon `Kham benh`; neu tich, he thong tu tao luot `CHO_KHAM`, ghi chu tiep nhan la tuy chon.
-- Trang thai kham duoc tinh tu hang doi: khong co luot kham la `KHONG_KHAM`; hang doi su dung `CHO_KHAM`, `DANG_KHAM`, `DA_KHAM`. Phieu kham chi luu thong tin kham va huong xu ly, khong luu mot trang thai kham trung lap. Trang thai luu tru (`NOI_TRU`, `NGOAI_TRU`, `DA_XUAT_VIEN`, `CHUYEN_VIEN`) van duoc quan ly rieng.
-- Ho so chu nuoi/thu cung khong co chuc nang sua/xoa; cap nhat truc tiep truong `thu_cung.cannang`; `phieu_kham.cannangkhi_kham` la anh chup can nang tai thoi diem kham.
-- Ho so co lich hen kham con hieu luc duoc uu tien tren dau; ghi chu lich hen duoc hien truoc ghi chu tiep nhan.
-
-Sau khi cap nhat ma nguon, chay:
+### Bước 7. Chạy ứng dụng
 
 ```bash
+php artisan serve
+```
+
+Mở trình duyệt tại:
+
+- Website: http://127.0.0.1:8000
+- Đăng nhập nhân viên: http://127.0.0.1:8000/login
+
+---
+
+## 🗂️ Cấu trúc thư mục
+
+| Thư mục / Tệp | Mục đích |
+|---|---|
+| `app/Http/Controllers` | Xử lý nghiệp vụ và API |
+| `app/Models` | Các model dữ liệu |
+| `app/Http/Middleware` | Kiểm tra xác thực, vai trò và điều kiện truy cập |
+| `database/migrations` | Định nghĩa cấu trúc cơ sở dữ liệu |
+| `database/seeders` | Seeder của dự án |
+| `resources/views` | Giao diện Blade |
+| `public` | Tài nguyên tĩnh CSS, JavaScript và hình ảnh |
+| `routes/web.php` | Các tuyến giao diện web |
+| `routes/api.php` | Các tuyến API |
+
+## 🌐 Một số đường dẫn chính
+
+| Đường dẫn | Chức năng |
+|---|---|
+| `/` | Trang chủ khách hàng |
+| `/login` | Đăng nhập nhân viên |
+| `/dashboard` | Tổng quan hệ thống |
+| `/pets` | Hồ sơ thú cưng |
+| `/cages` | Quản lý lồng nuôi |
+| `/medical` | Khám bệnh |
+| `/inventory` | Quản lý kho |
+| `/invoices` | Hóa đơn |
+| `/admin/users` | Quản lý tài khoản |
+| `/admin/statistics` | Thống kê |
+
+API được tổ chức dưới tiền tố `/api/v1`. Các API nghiệp vụ nội bộ yêu cầu xác thực; một số API đặt lịch và tra cứu công khai không yêu cầu đăng nhập.
+
+## 🗄️ Thông tin cơ sở dữ liệu
+
+Các bảng nghiệp vụ chính gồm:
+
+`nguoi_dung`, `chu_nuoi`, `thu_cung`, `long_nuoi`, `kho_hang`, `danh_muc_phau_thuat`, `loai_vac_xin`, `lich_su_tiem_chung`, `phieu_kham`, `hang_doi_kham`, `don_thuoc`, `hoa_don`, `chi_tiet_hoa_don`, `luot_luu_tru`, `yeu_cau_luu_tru`, `luot_dich_vu_spa`, `lich_hen_khach`.
+
+Một số quy ước dữ liệu hiện tại:
+
+- Cân nặng hiện tại của thú cưng được lưu tại `thu_cung.cannang`.
+- Số lượng tồn kho được lưu trực tiếp tại `kho_hang.soluongton`.
+- Số điện thoại người dùng có ràng buộc duy nhất.
+- Ghi chú tiếp nhận được lưu tại `hang_doi_kham.ghi_chu_tiep_nhan`.
+- Các bảng hạ tầng Laravel như `cache`, `jobs`, `sessions` và `personal_access_tokens` được giữ lại.
+
+## 🔄 Cập nhật mã nguồn
+
+Sau khi kéo thay đổi mới từ Git:
+
+```bash
+git pull
+composer install
 php artisan migrate
 php artisan optimize:clear
 ```
 
-Khong dung `migrate:fresh` tren database dang co du lieu.
+Nếu có thay đổi cấu hình môi trường, kiểm tra lại file `.env` trước khi chạy ứng dụng.
 
+> **Cảnh báo:** `php artisan migrate:fresh` sẽ xóa toàn bộ bảng hiện có trong database được cấu hình. Chỉ sử dụng với database thử nghiệm hoặc khi chắc chắn không cần giữ dữ liệu. Không chạy lệnh này trên dữ liệu đang sử dụng.
 
-## Cap nhat dat lich va luu tru
+## 🧪 Kiểm tra
 
-- Form dat lich tren trang chu dung hai o tich chon doc lap: **Dich vu spa** va **Kham benh**; co the chon mot hoac ca hai.
-- Tra cuu lich hen bang so dien thoai; khach hang co the xem thong tin va huy lich dang xac nhan neu luot kham chua bat dau.
-- Phi luu tru la **50.000 VND/ngay** cho tat ca cac loai long; gia xem truoc va hoa don dung cung mot muc phi.
-- Trang long luu tru co nut **Thong tin luu tru** khi long dang co thu, hien ma/ten thu cung va ten/so dien thoai chu nuoi.
-- Long dang co thu khong the sua; long co thu hoac da co lich su luu tru khong the xoa.
+Chạy bộ kiểm thử của Laravel:
+
+```bash
+php artisan test
+```
+
+---
+
+## 📄 Ghi chú
+
+- Đây là dự án học tập/thực tập xây dựng hệ thống quản lý phòng khám thú cưng.
+- Không đưa file `.env`, mật khẩu, khóa ứng dụng hoặc thông tin truy cập cơ sở dữ liệu lên GitHub.
+- Khi triển khai môi trường thật, cần cấu hình `APP_DEBUG=false`, HTTPS, sao lưu cơ sở dữ liệu và thiết lập tài khoản theo chính sách bảo mật.

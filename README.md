@@ -112,7 +112,7 @@ Nếu cần sử dụng nhánh hoàn thiện nghiệp vụ:
 
 ```bash
 git switch hoan-thien-nghiep-vu-pet-clinic
-git pull origin hoan-thien-nghiep-vet-clinic
+git pull origin hoan-thien-nghiep-vu-pet-clinic
 ```
 
 ### Bước 2. Cài đặt thư viện
@@ -178,9 +178,9 @@ php artisan tinker
 Nhập đoạn lệnh sau và thay email, số điện thoại, mật khẩu bằng thông tin riêng:
 
 ```php
-\\App\\Models\\NguoiDung::create([
+\App\Models\NguoiDung::create([
     'username' => 'admin',
-    'mat_khau' => \\Illuminate\\Support\\Facades\\Hash::make('THAY_BANG_MAT_KHAU_RIENG'),
+    'mat_khau' => \Illuminate\Support\Facades\Hash::make('THAY_BANG_MAT_KHAU_RIENG'),
     'ho_ten' => 'Quản trị viên',
     'email' => 'admin@example.com',
     'phone' => 'THAY_BANG_SO_DIEN_THOAI_RIENG',

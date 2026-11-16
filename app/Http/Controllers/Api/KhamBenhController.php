@@ -93,12 +93,12 @@ class KhamBenhController extends Controller
                     });
             })
             ->select(
-                'q.queue_id', 'q.pet_id', 'q.ghi_chu', 'q.ghi_chu_tiep_nhan',
+                'q.queue_id', 'q.pet_id', 'q.ghi_chu', 'q.ghi_chu_tiep_nhan', 'q.bo_qua_luc',
                 'q.trangthai as queue_status', 'q.created_at',
                 'p.mathucung', 'p.ten_thucung', 'p.loai', 'p.giong',
                 'o.ho_ten as ten_chu_nuoi', 'o.phone as sdt_chu_nuoi'
             )
-            ->orderByRaw("CASE WHEN q.trangthai = 'DANG_KHAM' THEN 0 WHEN q.trangthai = 'CHO_KHAM' AND (NULLIF(TRIM(q.ghi_chu), '') IS NOT NULL OR NULLIF(TRIM(q.ghi_chu_tiep_nhan), '') IS NOT NULL) THEN 1 WHEN q.trangthai = 'CHO_KHAM' THEN 2 ELSE 3 END")
+            ->orderByRaw("CASE WHEN q.trangthai = 'DANG_KHAM' THEN 0 WHEN q.trangthai = 'CHO_KHAM' AND q.bo_qua_luc IS NULL AND (NULLIF(TRIM(q.ghi_chu), '') IS NOT NULL OR NULLIF(TRIM(q.ghi_chu_tiep_nhan), '') IS NOT NULL) THEN 1 WHEN q.trangthai = 'CHO_KHAM' AND q.bo_qua_luc IS NULL THEN 2 WHEN q.trangthai = 'CHO_KHAM' AND q.bo_qua_luc IS NOT NULL THEN 3 ELSE 4 END")
             ->orderBy('q.created_at')
             ->get();
 
@@ -128,6 +128,21 @@ class KhamBenhController extends Controller
             DB::table('hang_doi_kham')->where('queue_id', $id)->update(['trangthai' => 'DANG_KHAM', 'updated_at' => now()]);
             return response()->json(['status' => 'success', 'message' => 'Đã chọn ca khám.', 'data' => ['pet_id' => $queue->pet_id]]);
         });
+    }
+
+    /** Bác sĩ bỏ qua một lượt chờ; lượt này được đưa xuống cuối danh sách. */
+    public function skipQueueRecord($id)
+    {
+        $queue = DB::table('hang_doi_kham')->where('queue_id', $id)->first();
+        abort_if(!$queue, 404, 'Không tìm thấy lượt chờ khám.');
+        if ($queue->trangthai !== 'CHO_KHAM') {
+            return response()->json(['status' => 'error', 'message' => 'Chỉ có thể bỏ qua lượt đang chờ khám.'], 409);
+        }
+        DB::table('hang_doi_kham')->where('queue_id', $id)->update([
+            'bo_qua_luc' => now(),
+            'updated_at' => now(),
+        ]);
+        return response()->json(['status' => 'success', 'message' => 'Đã bỏ qua lượt này và chuyển xuống cuối danh sách.']);
     }
 
     /** Nhân viên/quản trị chỉnh sửa ghi chú ưu tiên. */

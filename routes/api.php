@@ -112,6 +112,7 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         Route::get('/medical/records', [KhamBenhController::class, 'index']);
         Route::get('/medical/queue', [KhamBenhController::class, 'queue']);
         Route::post('/medical/queue/{id}/start', [KhamBenhController::class, 'startQueueRecord']);
+        Route::post('/medical/queue/{id}/skip', [KhamBenhController::class, 'skipQueueRecord']);
         Route::get('/medical/records/{id}', [KhamBenhController::class, 'show']);
         Route::post('/medical/prescriptions', [KhamBenhController::class, 'createPrescription']);
         Route::get('/medical/history/pet/{petId}', [KhamBenhController::class, 'getHistoryByPet']);

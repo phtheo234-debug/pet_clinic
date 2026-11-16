@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\\Seeders;
+namespace Database\Seeders;
 
-use Illuminate\\Database\\Seeder;
-use Illuminate\\Support\\Facades\\DB;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DuLieuMauPetClinicSeeder extends Seeder
 {
@@ -84,11 +84,11 @@ class DuLieuMauPetClinicSeeder extends Seeder
 
             // 3. Them 5 chuong luu tru dang trong.
             $chuongs = [
-                ['LN-M-001', 'Long thuong 01', 'THUONG', 2, 25.00, 'CHO'],
-                ['LN-M-002', 'Long thuong 02', 'THUONG', 2, 25.00, 'CHO'],
-                ['LN-M-003', 'Long cach ly 01', 'CACH_LY', 1, 15.00, 'CHO'],
-                ['LN-M-004', 'Long cap cuu ICU 01', 'CAP_CUU_ICU', 1, 20.00, 'CHO'],
-                ['LN-M-005', 'Long thuong 03', 'THUONG', 3, 35.00, 'CHO'],
+                ['LN-M-001', 'Long thuong 01', 'THUONG', 2, 25.00, null],
+                ['LN-M-002', 'Long thuong 02', 'THUONG', 2, 25.00, null],
+                ['LN-M-003', 'Long cach ly 01', 'CACH_LY', 1, 15.00, null],
+                ['LN-M-004', 'Long cap cuu ICU 01', 'CAP_CUU_ICU', 1, 20.00, null],
+                ['LN-M-005', 'Long thuong 03', 'THUONG', 3, 35.00, null],
             ];
 
             foreach ($chuongs as [$ma, $ten, $loai, $sucChua, $taiTrong, $loaiApDung]) {

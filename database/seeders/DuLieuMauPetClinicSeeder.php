@@ -65,6 +65,28 @@ class DuLieuMauPetClinicSeeder extends Seeder
                 }
             }
 
+            // Them 5 dich vu Spa theo dung ma va cau truc ma dich vu cua API.
+            $dichVuSpa = [
+                ['SPA-20261116-130001', 'Tam va say long thu cung', 120000],
+                ['SPA-20261116-130002', 'Tam tri viem da va ngua', 180000],
+                ['SPA-20261116-130003', 'Cat tia long tao kieu', 150000],
+                ['SPA-20261116-130004', 'Ve sinh tai, mat va rang', 90000],
+                ['SPA-20261116-130005', 'Cat mong va cham soc ban chan', 60000],
+            ];
+
+            foreach ($dichVuSpa as [$ma, $ten, $gia]) {
+                DB::table('kho_hang')->updateOrInsert(
+                    ['masanpham' => $ma],
+                    [
+                        'ten_sanpham' => $ten,
+                        'danhmuc' => 'DICH_VU_SPA',
+                        'donvitinh' => '',
+                        'dongia' => $gia,
+                        'soluongton' => 0,
+                    ]
+                );
+            }
+
             // 2. Them 5 danh muc phau thuat.
             $phauThuats = [
                 ['PT-M-001', 'Triet san cho', 650000],

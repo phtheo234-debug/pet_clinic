@@ -13,9 +13,14 @@
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
         <div class="font-weight-bold text-danger"><i class="fas fa-clipboard-list mr-1"></i> DANH SÁCH CHỜ KHÁM</div>
-        <button type="button" id="btnSelectPriorityQueue" class="btn btn-danger btn-sm mt-2" disabled>
-            <i class="fas fa-hand-pointer mr-1"></i> Đang tải ca khám...
-        </button>
+        <div class="d-flex flex-wrap align-items-center mt-2">
+            <button type="button" id="btnSelectPriorityQueue" class="btn btn-danger btn-sm mr-2 mb-2" disabled>
+                <i class="fas fa-hand-pointer mr-1"></i> Đang tải ca khám...
+            </button>
+            <button type="button" id="btnSkipPriorityQueue" class="btn btn-outline-secondary btn-sm mb-2" disabled>
+                <i class="fas fa-forward mr-1"></i> Bỏ qua
+            </button>
+        </div>
         <div id="medicalQueueFeatured" class="mt-3 p-3 rounded border border-danger bg-light">
             <span class="text-muted">Đang tải thú cưng cần khám ưu tiên...</span>
         </div>

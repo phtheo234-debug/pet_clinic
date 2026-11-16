@@ -29,15 +29,29 @@ function renderSurgeryCatalog() {
     }).join("") : '<tr><td colspan="5" class="text-center text-muted">Chưa có loại phẫu thuật.</td></tr>';
 }
 
-function openSurgeryForm(id = null) {
+async function openSurgeryForm(id = null) {
     const item = surgeryCatalogItems.find(row => Number(row.surgery_id) === Number(id));
-    document.getElementById("surgeryForm").reset();
+    const form = document.getElementById("surgeryForm");
+    const codeInput = document.getElementById("surgery_code");
+    form.reset();
     document.getElementById("surgery_form_id").value = item ? item.surgery_id : "";
     document.getElementById("surgeryFormTitle").textContent = item ? "Cập nhật loại phẫu thuật" : "Thêm loại phẫu thuật";
-    document.getElementById("surgery_code").value = item?.ma_phauthuat || "";
+    codeInput.value = item?.ma_phauthuat || "Đang tạo mã xem trước...";
     document.getElementById("surgery_name").value = item?.ten_phauthuat || "";
-    document.getElementById("surgery_price").value = item?.gia ?? "";
+    document.getElementById("surgery_price").value = item ? (Number(item.gia || 0) / 1000) : "";
     document.getElementById("surgery_status").value = item && !Number(item.trangthai) ? "0" : "1";
+
+    if (!item) {
+        try {
+            const response = await apiRequest("/surgeries/code-preview");
+            const data = response?.data || response;
+            codeInput.value = data.ma_phauthuat;
+        } catch (error) {
+            codeInput.value = "";
+            alert("Không tạo được mã phẫu thuật xem trước: " + error.message);
+            return;
+        }
+    }
     $("#surgeryFormModal").modal("show");
 }
 
@@ -73,11 +87,13 @@ async function saveSurgery(event) {
     event.preventDefault();
     const id = document.getElementById("surgery_form_id").value;
     const payload = {
-        ma_phauthuat: document.getElementById("surgery_code").value.trim(),
         ten_phauthuat: document.getElementById("surgery_name").value.trim(),
-        gia: Number(document.getElementById("surgery_price").value),
+        gia: Math.round(Number(document.getElementById("surgery_price").value) * 1000),
         trangthai: document.getElementById("surgery_status").value === "1"
     };
+    if (!id) {
+        payload.ma_phauthuat = document.getElementById("surgery_code").value.trim();
+    }
     const button = document.getElementById("btnSaveSurgery");
     button.disabled = true;
     try {

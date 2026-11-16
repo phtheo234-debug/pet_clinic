@@ -5,10 +5,27 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class PhauThuatController extends Controller
 {
+    private function taoMaPhauThuat(): string
+    {
+        do {
+            $code = 'PT-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(6));
+        } while (DB::table('danh_muc_phau_thuat')->where('ma_phauthuat', $code)->exists());
+
+        return $code;
+    }
+
+    public function previewCode()
+    {
+        return response()->json([
+            'status' => 'success',
+            'data' => ['ma_phauthuat' => $this->taoMaPhauThuat()],
+        ]);
+    }
+
     public function index()
     {
         return response()->json([
@@ -20,14 +37,14 @@ class PhauThuatController extends Controller
     public function store(Request $request)
     {
         $fields = $request->validate([
-            'ma_phauthuat' => 'required|string|max:30|unique:danh_muc_phau_thuat,ma_phauthuat',
+            'ma_phauthuat' => 'nullable|string|max:30|regex:/^PT-[0-9]{8}-[0-9]{6}-[A-Z0-9]{6}$/|unique:danh_muc_phau_thuat,ma_phauthuat',
             'ten_phauthuat' => 'required|string|max:100',
             'gia' => 'required|integer|min:0',
             'trangthai' => 'nullable|boolean',
         ]);
 
         $id = DB::table('danh_muc_phau_thuat')->insertGetId([
-            'ma_phauthuat' => strtoupper(trim($fields['ma_phauthuat'])),
+            'ma_phauthuat' => ($fields['ma_phauthuat'] ?? null) ?: $this->taoMaPhauThuat(),
             'ten_phauthuat' => trim($fields['ten_phauthuat']),
             'gia' => $fields['gia'],
             'trangthai' => $fields['trangthai'] ?? true,
@@ -41,14 +58,12 @@ class PhauThuatController extends Controller
     public function update(Request $request, int $id)
     {
         $fields = $request->validate([
-            'ma_phauthuat' => ['required', 'string', 'max:30', Rule::unique('danh_muc_phau_thuat', 'ma_phauthuat')->ignore($id, 'surgery_id')],
             'ten_phauthuat' => 'required|string|max:100',
             'gia' => 'required|integer|min:0',
             'trangthai' => 'required|boolean',
         ]);
 
         DB::table('danh_muc_phau_thuat')->where('surgery_id', $id)->update([
-            'ma_phauthuat' => strtoupper(trim($fields['ma_phauthuat'])),
             'ten_phauthuat' => trim($fields['ten_phauthuat']),
             'gia' => $fields['gia'],
             'trangthai' => $fields['trangthai'],

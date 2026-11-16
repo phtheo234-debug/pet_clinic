@@ -176,9 +176,9 @@
             <div class="modal-header"><h5 class="modal-title" id="surgeryFormTitle">Thêm loại phẫu thuật</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
             <div class="modal-body">
                 <input type="hidden" id="surgery_form_id">
-                <div class="form-group"><label>Mã phẫu thuật</label><input id="surgery_code" class="form-control" maxlength="30" required></div>
+                <div class="form-group"><label>Mã phẫu thuật (tự động)</label><input id="surgery_code" class="form-control" maxlength="30" readonly required><small class="form-text text-muted">Mã do hệ thống tự động cấp; chỉ xem trước, không cần nhập.</small></div>
                 <div class="form-group"><label>Tên phẫu thuật</label><input id="surgery_name" class="form-control" maxlength="100" required></div>
-                <div class="form-group"><label>Giá (VNĐ)</label><input type="number" id="surgery_price" class="form-control" min="0" step="1000" required></div>
+                <div class="form-group"><label>Giá (nghìn VNĐ)</label><input type="number" id="surgery_price" class="form-control" min="0" step="0.01" required><small class="form-text text-muted">Nhập 100 tương đương 100.000 VNĐ.</small></div>
                 <div class="form-group"><label>Trạng thái</label><select id="surgery_status" class="form-control"><option value="1">Đang áp dụng</option><option value="0">Ngừng áp dụng</option></select></div>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary" id="btnSaveSurgery">Lưu</button></div>

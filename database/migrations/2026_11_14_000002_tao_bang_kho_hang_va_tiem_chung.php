@@ -10,7 +10,8 @@ return new class extends Migration
     {
         Schema::create('kho_hang', function (Blueprint $table) {
             $table->id('item_id');
-            $table->string('masanpham', 20)->unique();
+            // Mã sản phẩm dạng VACXIN-YYYYMMDD-HHMMSS dài 22 ký tự.
+            $table->string('masanpham', 30)->unique();
             $table->string('ten_sanpham', 100);
             $table->enum('danhmuc', ['THUOC', 'VAC_XIN', 'THUC_AN', 'DO_DUNG', 'DICH_VU_SPA']);
             $table->string('donvitinh', 20);

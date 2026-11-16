@@ -230,6 +230,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     await Promise.all([loadPetsDropdown(), loadMedicalRecords(), loadMedicalInventory(), loadMedicalVaccinationTypes()]);
     document.getElementById("pet_select")?.addEventListener("change", event => loadMedicalVaccinationHistory(Number(event.target.value || 0)));
     if (document.getElementById("medicalQueueBody")) {
+        document.getElementById("btnSkipPriorityQueue")?.addEventListener("click", async event => {
+            const button = event.currentTarget;
+            const queueId = Number(button.dataset.queueId || 0);
+            if (!queueId) return;
+            if (!confirm("Bỏ qua lượt khám này và chuyển xuống cuối danh sách chờ?")) return;
+            button.disabled = true;
+            try {
+                const response = await apiRequest("/medical/queue/" + queueId + "/skip", {method:"POST"});
+                alert(response.message || "Đã chuyển lượt xuống cuối danh sách.");
+                await loadMedicalQueue();
+            } catch (error) {
+                alert("Không thể bỏ qua lượt khám: " + error.message);
+                await loadMedicalQueue();
+            }
+        });
         document.getElementById("btnSelectPriorityQueue")?.addEventListener("click", async event => {
             const button = event.currentTarget;
             const queueId = Number(button.dataset.queueId || 0);
@@ -584,7 +599,7 @@ async function loadMedicalQueue() {
         const response = await apiRequest("/medical/queue");
         const rows = extractList(response);
         const active = rows.find(item => item.queue_status === "DANG_KHAM");
-        const next = active || rows.find(item => item.queue_status === "CHO_KHAM");
+        const next = active || rows.find(item => item.queue_status === "CHO_KHAM" && !item.bo_qua_luc) || rows.find(item => item.queue_status === "CHO_KHAM");
         const petSelect = document.getElementById("pet_select");
         if (petSelect) {
             if (active && Array.from(petSelect.options).some(option => Number(option.value) === Number(active.pet_id))) {
@@ -609,6 +624,11 @@ async function loadMedicalQueue() {
             selectButton.innerHTML = active
                 ? '<i class="fas fa-stethoscope mr-1"></i> Đang khám'
                 : next ? '<i class="fas fa-hand-pointer mr-1"></i> Chọn' : '<i class="fas fa-check mr-1"></i> Không còn ca chờ';
+        }
+        const skipButton = document.getElementById("btnSkipPriorityQueue");
+        if (skipButton) {
+            skipButton.dataset.queueId = next && !active && next.queue_status === "CHO_KHAM" ? String(next.queue_id) : "";
+            skipButton.disabled = !next || !!active || next.queue_status !== "CHO_KHAM" || !!next.bo_qua_luc;
         }
         const statusLabels = {
             CHO_KHAM: '<span class="badge badge-secondary">Chưa khám</span>',

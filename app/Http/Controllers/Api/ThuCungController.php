@@ -235,6 +235,15 @@ class ThuCungController extends Controller
                 // 3. Tạo mã định danh duy nhất TC0001 (BR-01)
                 DB::table('thu_cung')->where('pet_id', $id)->update(['mathucung' => sprintf('TC%04d', $id)]);
 
+                // Lưu cân nặng ban đầu để hệ thống dùng khi đề xuất lồng lưu trú.
+                DB::table('lich_su_can_nang')->insert([
+                    'pet_id' => $id,
+                    'cannang' => $v['weight'],
+                    'ngaydo' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
                 // Chỉ tạo lượt khám khi nhân viên tích "Khám bệnh" lúc tiếp nhận.
                 if ($request->boolean('kham_benh')) {
                     $note = trim((string) ($v['ghi_chu_kham'] ?? ''));
@@ -300,7 +309,18 @@ class ThuCungController extends Controller
             'weight' => 'required|numeric|min:0.1|max:999',
         ]);
 
-        DB::table('thu_cung')->where('pet_id', $id)->update(['cannang' => $v['weight']]);
+        DB::transaction(function () use ($id, $v) {
+            DB::table('thu_cung')->where('pet_id', $id)->update(['cannang' => $v['weight']]);
+
+            // Mỗi lần cập nhật cân nặng là một bản ghi lịch sử mới, không ghi đè lần đo cũ.
+            DB::table('lich_su_can_nang')->insert([
+                'pet_id' => $id,
+                'cannang' => $v['weight'],
+                'ngaydo' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
 
         return response()->json([
             'status' => 'success',

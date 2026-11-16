@@ -65,7 +65,6 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
         Route::put('/inventory/{id}', [QuanLyKhoController::class, 'update']);
         Route::delete('/inventory/{id}', [QuanLyKhoController::class, 'destroy']);
 
-        Route::get('/surgeries/code-preview', [PhauThuatController::class, 'previewCode']);
     Route::get('/surgeries', [PhauThuatController::class, 'index']);
         Route::post('/surgeries', [PhauThuatController::class, 'store']);
         Route::put('/surgeries/{id}', [PhauThuatController::class, 'update']);
@@ -101,6 +100,7 @@ Route::middleware(['auth:sanctum', 'force.password.change'])->prefix('v1')->grou
     Route::post('/spa/usages', [SuDungDichVuSpaController::class, 'store'])->middleware('role:QUAN_TRI,NHAN_VIEN');
 
     Route::get('/surgeries', [PhauThuatController::class, 'index']);
+    Route::get('/surgeries/code-preview', [PhauThuatController::class, 'previewCode']);
 
     // Danh mục kho cho phép xem; nhập/xuất kho dành cho nhân viên/quản trị.
     Route::get('/inventory', [KhoController::class, 'index']);
